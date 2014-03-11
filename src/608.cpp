@@ -1,6 +1,6 @@
 #include "ccextractor.h"
 
-int     rowdata[] = {11,-1,1,2,3,4,12,13,14,15,5,6,7,8,9,10};
+static const int     rowdata[] = {11,-1,1,2,3,4,12,13,14,15,5,6,7,8,9,10};
 // Relationship between the first PAC byte and the row number
 int in_xds_mode=0; 
 
@@ -39,7 +39,7 @@ int new_sentence=1; // Capitalize next letter?
 unsigned char usercolor_rgb[8]="";
 color_code default_color=COL_TRANSPARENT;
 
-const char *sami_header= // TODO: Revise the <!-- comments
+static const char *sami_header= // TODO: Revise the <!-- comments
 "<SAMI>\n\
 <HEAD>\n\
 <STYLE TYPE=\"text/css\">\n\
@@ -52,12 +52,12 @@ text-align: center; font-size: 18pt; font-family: arial; font-weight: bold; colo
 </HEAD>\n\n\
 <BODY>\n";
 
-const char *smptett_header = 
+static const char *smptett_header = 
 "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n\
 <tt xmlns=\"http://www.w3.org/ns/ttml\" xml:lang=\"en\">\n\
 <body>\n<div>\n" ;
 
-const char *command_type[] =
+static const char *command_type[] =
 {
     "Unknown",
     "EDM - EraseDisplayedMemory",
@@ -80,7 +80,7 @@ const char *command_type[] =
 	"RU1 - Fake Roll up 1 rows"
 };
 
-const char *font_text[]=
+static const char *font_text[]=
 {
     "regular",
     "italics",
@@ -88,7 +88,7 @@ const char *font_text[]=
     "underlined italics"
 };
 
-const char *cc_modes_text[]=
+static const char *cc_modes_text[]=
 {
     "Pop-Up captions"
 };
@@ -144,7 +144,7 @@ void init_eia608 (struct eia608 *data)
 	data->new_channel=1;
 }
 
-eia608_screen *get_writing_buffer (struct s_write *wb)
+eia608_screen *get_writing_buffer (struct ccx_s_write *wb)
 {
     eia608_screen *use_buffer=NULL;
     switch (wb->data608->mode)
@@ -173,7 +173,7 @@ eia608_screen *get_writing_buffer (struct s_write *wb)
     return use_buffer;
 }
 
-void delete_to_end_of_row (struct s_write *wb)
+void delete_to_end_of_row (struct ccx_s_write *wb)
 {
     if (wb->data608->mode!=MODE_TEXT) 
     {		
@@ -189,7 +189,7 @@ void delete_to_end_of_row (struct s_write *wb)
 	}
 }
 
-void write_char (const unsigned char c, struct s_write *wb)
+void write_char (const unsigned char c, struct ccx_s_write *wb)
 {
     if (wb->data608->mode!=MODE_TEXT) 
     {		
@@ -219,7 +219,7 @@ void write_char (const unsigned char c, struct s_write *wb)
 }
 
 /* Handle MID-ROW CODES. */
-void handle_text_attr (const unsigned char c1, const unsigned char c2, struct s_write *wb)
+void handle_text_attr (const unsigned char c1, const unsigned char c2, struct ccx_s_write *wb)
 {
     // Handle channel change
     wb->data608->channel=wb->data608->new_channel;
@@ -247,29 +247,29 @@ void handle_text_attr (const unsigned char c1, const unsigned char c2, struct s_
 }
 
 
-void write_subtitle_file_footer (struct s_write *wb)
+void write_subtitle_file_footer (struct ccx_s_write *wb)
 {
     switch (write_format)
     {
-        case OF_SAMI:
+        case CCX_OF_SAMI:
             sprintf ((char *) str,"</BODY></SAMI>\n");
-            if (encoding!=ENC_UNICODE)
+            if (encoding!=CCX_ENC_UNICODE)
             {
                 dbg_print(CCX_DMT_608, "\r%s\n", str);
             }
             enc_buffer_used=encode_line (enc_buffer,(unsigned char *) str);
             write (wb->fh, enc_buffer,enc_buffer_used);
             break;
-		case OF_SMPTETT:
+		case CCX_OF_SMPTETT:
 			sprintf ((char *) str,"</div></body></tt>\n");
-			if (encoding!=ENC_UNICODE)
+			if (encoding!=CCX_ENC_UNICODE)
 			{
 				dbg_print(CCX_DMT_608, "\r%s\n", str);
 			}
 			enc_buffer_used=encode_line (enc_buffer,(unsigned char *) str);
 			write (wb->fh, enc_buffer,enc_buffer_used);
 			break;
-        case OF_SPUPNG:
+        case CCX_OF_SPUPNG:
             write_spumux_footer(wb);
             break;
 		default: // Nothing to do, no footer on this format
@@ -278,37 +278,37 @@ void write_subtitle_file_footer (struct s_write *wb)
 }
 
 
-void write_subtitle_file_header (struct s_write *wb)
+void write_subtitle_file_header (struct ccx_s_write *wb)
 {
     switch (write_format)
     {
-        case OF_SRT: // Subrip subtitles have no header
+        case CCX_OF_SRT: // Subrip subtitles have no header
             break; 
-        case OF_SAMI: // This header brought to you by McPoodle's CCASDI  
+        case CCX_OF_SAMI: // This header brought to you by McPoodle's CCASDI  
             //fprintf_encoded (wb->fh, sami_header);
             REQUEST_BUFFER_CAPACITY(strlen (sami_header)*3);
             enc_buffer_used=encode_line (enc_buffer,(unsigned char *) sami_header);
             write (wb->fh, enc_buffer,enc_buffer_used);
             break;
-        case OF_SMPTETT: // This header brought to you by McPoodle's CCASDI  
+        case CCX_OF_SMPTETT: // This header brought to you by McPoodle's CCASDI  
 			//fprintf_encoded (wb->fh, sami_header);
 			REQUEST_BUFFER_CAPACITY(strlen (smptett_header)*3);
             enc_buffer_used=encode_line (enc_buffer,(unsigned char *) smptett_header);
             write (wb->fh, enc_buffer,enc_buffer_used);
             break;
-        case OF_RCWT: // Write header
+        case CCX_OF_RCWT: // Write header
             write (wb->fh, rcwt_header, sizeof(rcwt_header));
             break;
-        case OF_SPUPNG:
+        case CCX_OF_SPUPNG:
             write_spumux_header(wb);
             break;
-        case OF_TRANSCRIPT: // No header. Fall thru
+        case CCX_OF_TRANSCRIPT: // No header. Fall thru
         default:
             break;
     }
 }
 
-void write_cc_line_as_transcript (struct eia608_screen *data, struct s_write *wb, int line_number)
+void write_cc_line_as_transcript (struct eia608_screen *data, struct ccx_s_write *wb, int line_number)
 {
 	unsigned h1,m1,s1,ms1;
 	unsigned h2,m2,s2,ms2;
@@ -318,7 +318,7 @@ void write_cc_line_as_transcript (struct eia608_screen *data, struct s_write *wb
         correct_case(line_number,data);
     }
     int length = get_decoder_line_basic (subline, line_number, data);
-    if (encoding!=ENC_UNICODE)
+    if (encoding!=CCX_ENC_UNICODE)
     {
         dbg_print(CCX_DMT_608, "\r");
         dbg_print(CCX_DMT_608, "%s\n",subline);
@@ -404,7 +404,7 @@ void write_cc_line_as_transcript (struct eia608_screen *data, struct s_write *wb
     // fprintf (wb->fh,encoded_crlf);
 }
 
-int write_cc_buffer_as_transcript (struct eia608_screen *data, struct s_write *wb)
+int write_cc_buffer_as_transcript (struct eia608_screen *data, struct ccx_s_write *wb)
 {
     int wrote_something = 0;
 	wb->data608->ts_start_of_current_line=wb->data608->current_visible_start_ms;
@@ -425,7 +425,7 @@ int write_cc_buffer_as_transcript (struct eia608_screen *data, struct s_write *w
 
 
 
-struct eia608_screen *get_current_visible_buffer (struct s_write *wb)
+struct eia608_screen *get_current_visible_buffer (struct ccx_s_write *wb)
 {
     struct eia608_screen *data;
     if (wb->data608->visible_buffer==1)
@@ -436,7 +436,7 @@ struct eia608_screen *get_current_visible_buffer (struct s_write *wb)
 }
 
 
-int write_cc_buffer (struct s_write *wb)
+int write_cc_buffer (struct ccx_s_write *wb)
 {
     struct eia608_screen *data;
     int wrote_something=0;
@@ -460,25 +460,25 @@ int write_cc_buffer (struct s_write *wb)
         new_sentence=1;
         switch (write_format)
         {
-            case OF_SRT:
+            case CCX_OF_SRT:
                 if (!startcredits_displayed && start_credits_text!=NULL)
                     try_to_add_start_credits(wb);            
                 wrote_something = write_cc_buffer_as_srt (data, wb);
                 break;
-            case OF_SAMI:
+            case CCX_OF_SAMI:
                 if (!startcredits_displayed && start_credits_text!=NULL)
                     try_to_add_start_credits(wb);
                 wrote_something = write_cc_buffer_as_sami (data,wb);
                 break;
-            case OF_SMPTETT:
+            case CCX_OF_SMPTETT:
 				if (!startcredits_displayed && start_credits_text!=NULL)
 					try_to_add_start_credits(wb);
 				wrote_something = write_cc_buffer_as_smptett (data,wb);
                 break;
-            case OF_TRANSCRIPT:
+            case CCX_OF_TRANSCRIPT:
                 wrote_something = write_cc_buffer_as_transcript (data,wb);
                 break;
-            case OF_SPUPNG:
+            case CCX_OF_SPUPNG:
                 wrote_something = write_cc_buffer_as_spupng (data,wb);
                 break;
             default: 
@@ -494,7 +494,7 @@ int write_cc_buffer (struct s_write *wb)
 }
 
 // Check if a rollup would cause a line to go off the visible area
-int check_roll_up (struct s_write *wb)
+int check_roll_up (struct ccx_s_write *wb)
 {
 	int keep_lines=0;
 	int firstrow=-1, lastrow=-1;
@@ -550,7 +550,7 @@ int check_roll_up (struct s_write *wb)
 
 // Roll-up: Returns true if a line was rolled over the visible area (it dissapears from screen), false
 // if the rollup didn't delete any line.
-int roll_up(struct s_write *wb)
+int roll_up(struct ccx_s_write *wb)
 {
     eia608_screen *use_buffer;
     if (wb->data608->visible_buffer==1)
@@ -640,7 +640,7 @@ int roll_up(struct s_write *wb)
 	return (rows_now != rows_orig);
 }
 
-void erase_memory (struct s_write *wb, int displayed)
+void erase_memory (struct ccx_s_write *wb, int displayed)
 {
     eia608_screen *buf;
     if (displayed)
@@ -660,7 +660,7 @@ void erase_memory (struct s_write *wb, int displayed)
     clear_eia608_cc_buffer (buf);
 }
 
-int is_current_row_empty (struct s_write *wb)
+int is_current_row_empty (struct ccx_s_write *wb)
 {
     eia608_screen *use_buffer;
     if (wb->data608->visible_buffer==1)
@@ -676,7 +676,7 @@ int is_current_row_empty (struct s_write *wb)
 }
 
 /* Process GLOBAL CODES */
-void handle_command (/*const */ unsigned char c1, const unsigned char c2, struct s_write *wb)
+void handle_command (/*const */ unsigned char c1, const unsigned char c2, struct ccx_s_write *wb)
 {
 	int changes=0; 
 
@@ -848,7 +848,7 @@ void handle_command (/*const */ unsigned char c1, const unsigned char c2, struct
 					wb->data608->cursor_row++;					
 				break;
 			}
-			if (write_format==OF_TRANSCRIPT)
+			if (write_format==CCX_OF_TRANSCRIPT)
 			{
                 write_cc_line_as_transcript(get_current_visible_buffer (wb), wb, wb->data608->cursor_row);
 			}
@@ -859,7 +859,7 @@ void handle_command (/*const */ unsigned char c1, const unsigned char c2, struct
 			if (changes)
 			{
 				// Only if the roll up would actually cause a line to disappear we write the buffer
-				if (write_format!=OF_TRANSCRIPT)
+				if (write_format!=CCX_OF_TRANSCRIPT)
 				{
 					if (write_cc_buffer(wb))
 						wb->data608->screenfuls_counter++;
@@ -879,7 +879,7 @@ void handle_command (/*const */ unsigned char c1, const unsigned char c2, struct
         case COM_ERASEDISPLAYEDMEMORY:
             // Write it to disk before doing this, and make a note of the new
             // time it became clear.
-            if (write_format==OF_TRANSCRIPT && 
+            if (write_format==CCX_OF_TRANSCRIPT && 
                 (wb->data608->mode==MODE_FAKE_ROLLUP_1 ||
 				wb->data608->mode==MODE_ROLLUP_2 || wb->data608->mode==MODE_ROLLUP_3 ||
                 wb->data608->mode==MODE_ROLLUP_4))
@@ -932,7 +932,7 @@ void handle_command (/*const */ unsigned char c1, const unsigned char c2, struct
 
 }
 
-void handle_end_of_data (struct s_write *wb)
+void handle_end_of_data (struct ccx_s_write *wb)
 {
     // We issue a EraseDisplayedMemory here so if there's any captions pending
     // they get written to file. 
@@ -940,7 +940,7 @@ void handle_end_of_data (struct s_write *wb)
 }
 
 // CEA-608, Anex F 1.1.1. - Character Set Table / Special Characters
-void handle_double (const unsigned char c1, const unsigned char c2, struct s_write *wb)
+void handle_double (const unsigned char c1, const unsigned char c2, struct ccx_s_write *wb)
 {
     unsigned char c;
     if (wb->data608->channel!=cc_channel)
@@ -954,7 +954,7 @@ void handle_double (const unsigned char c1, const unsigned char c2, struct s_wri
 }
 
 /* Process EXTENDED CHARACTERS */
-unsigned char handle_extended (unsigned char hi, unsigned char lo, struct s_write *wb)
+unsigned char handle_extended (unsigned char hi, unsigned char lo, struct ccx_s_write *wb)
 {
     // Handle channel change
     if (wb->data608->new_channel > 2) 
@@ -993,7 +993,7 @@ unsigned char handle_extended (unsigned char hi, unsigned char lo, struct s_writ
 }
 
 /* Process PREAMBLE ACCESS CODES (PAC) */
-void handle_pac (unsigned char c1, unsigned char c2, struct s_write *wb)
+void handle_pac (unsigned char c1, unsigned char c2, struct ccx_s_write *wb)
 {
     // Handle channel change
     if (wb->data608->new_channel > 2) 
@@ -1063,7 +1063,7 @@ void handle_pac (unsigned char c1, unsigned char c2, struct s_write *wb)
 }
 
 
-void handle_single (const unsigned char c1, struct s_write *wb)
+void handle_single (const unsigned char c1, struct ccx_s_write *wb)
 {	
     if (c1<0x20 || wb->data608->channel!=cc_channel)
         return; // We don't allow special stuff here
@@ -1072,7 +1072,7 @@ void handle_single (const unsigned char c1, struct s_write *wb)
     write_char (c1,wb);
 }
 
-void erase_both_memories (struct s_write *wb)
+void erase_both_memories (struct ccx_s_write *wb)
 {
 	erase_memory (wb,false);
 	// For the visible memory, we write the contents to disk
@@ -1089,7 +1089,7 @@ void erase_both_memories (struct s_write *wb)
 	erase_memory (wb,true);
 }
 
-int check_channel (unsigned char c1, struct s_write *wb)
+int check_channel (unsigned char c1, struct ccx_s_write *wb)
 {
 	int newchan=wb->data608->channel;
 	if (c1>=0x10 && c1<=0x17)
@@ -1112,7 +1112,7 @@ int check_channel (unsigned char c1, struct s_write *wb)
 /* Handle Command, special char or attribute and also check for
 * channel changes.
 * Returns 1 if something was written to screen, 0 otherwise */
-int disCommand (unsigned char hi, unsigned char lo, struct s_write *wb)
+int disCommand (unsigned char hi, unsigned char lo, struct ccx_s_write *wb)
 {
     int wrote_to_screen=0;
 
@@ -1179,7 +1179,7 @@ int disCommand (unsigned char hi, unsigned char lo, struct s_write *wb)
 }
 
 /* If wb is NULL, then only XDS will be processed */
-void process608 (const unsigned char *data, int length, struct s_write *wb)
+void process608 (const unsigned char *data, int length, struct ccx_s_write *wb)
 {
     static int textprinted = 0;	
 	if (wb)

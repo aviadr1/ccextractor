@@ -7,17 +7,18 @@
 // enough space.
 //#define SORTBUF (2*MAXBFRAMES+1) - from ccextractor.h
 // B-Frames can be (temporally) before or after the anchor
-int cc_data_count[SORTBUF];
+#define SORTBUF (2*MAXBFRAMES+1)
+static int cc_data_count[SORTBUF];
 // Store fts;
-LLONG cc_fts[SORTBUF];
+static LLONG cc_fts[SORTBUF];
 // Store HD CC packets
-unsigned char cc_data_pkts[SORTBUF][10*31*3+1]; // *10, because MP4 seems to have different limits
+static unsigned char cc_data_pkts[SORTBUF][10*31*3+1]; // *10, because MP4 seems to have different limits
 
 // Set to true if data is buffered
 int has_ccdata_buffered = 0;
 // The sequence number of the current anchor frame.  All currently read
 // B-Frames belong to this I- or P-frame.
-int anchor_seq_number = -1;
+static int anchor_seq_number = -1;
 
 // Remember the current field for 608 decoding
 int current_field=1; // 1 = field 1, 2 = field 2, 3 = 708
@@ -72,7 +73,7 @@ void store_hdcc(unsigned char *cc_data, int cc_count, int sequence_number, LLONG
 			// Changed by CFS to concat, i.e. don't assume there's no data already for this seq_index.
 			// Needed at least for MP4 samples. // TODO: make sure we don't overflow
 			cc_fts[seq_index] = current_fts_now; // CFS: Maybe do even if there's no data?
-			if (stream_mode!=SM_MP4) // CFS: Very ugly hack, but looks like overwriting is needed for at least some ES
+			if (stream_mode!=CCX_SM_MP4) // CFS: Very ugly hack, but looks like overwriting is needed for at least some ES
 				cc_data_count[seq_index]  = 0;
 			memcpy(cc_data_pkts[seq_index]+cc_data_count[seq_index]*3, cc_data, cc_count*3+1);
 		}
@@ -109,7 +110,7 @@ void process_hdcc (void)
     for (int seq=0; seq<SORTBUF; seq++)
     {
         // We rely on this.
-        if (bufferdatatype == H264)
+        if (bufferdatatype == CCX_BUFFERDATA_TYPE_H264)
             reset_cb = 1;
 
 	// If fts_now is unchanged we rely on cc block counting,
@@ -197,7 +198,7 @@ int do_cb (unsigned char *cc_block)
         cc_block[2]=0x80;
     }
 
-	if ( write_format!=OF_RAW && // In raw we cannot skip padding because timing depends on it
+	if ( write_format!=CCX_OF_RAW && // In raw we cannot skip padding because timing depends on it
 		(cc_block[0]==0xFA || cc_block[0]==0xFC || cc_block[0]==0xFD )
 		&& (cc_block[1]&0x7F)==0 && (cc_block[2]&0x7F)==0) // CFS: Skip non-data, makes debugging harder.
 		return 1; 
@@ -210,7 +211,7 @@ int do_cb (unsigned char *cc_block)
      * go through the 608/708 cases below.  We do that to get accurate
      * counts for cb_field1, cb_field2 and cb_708.
      * Note that printdata() and do_708() must not be called for
-     * the OF_RCWT case. */
+     * the CCX_OF_RCWT case. */
 
     if (cc_valid || cc_type==3)
     {
@@ -233,7 +234,7 @@ int do_cb (unsigned char *cc_block)
             }
             if (timeok)
             {
-                if(write_format!=OF_RCWT)
+                if(write_format!=CCX_OF_RCWT)
                     printdata (cc_block+1,2,0,0);
                 else
                     writercwtdata(cc_block);
@@ -255,7 +256,7 @@ int do_cb (unsigned char *cc_block)
             }
             if (timeok)
             {
-                if(write_format!=OF_RCWT)
+                if(write_format!=CCX_OF_RCWT)
                     printdata (0,0,cc_block+1,2);
                 else
                     writercwtdata(cc_block);
@@ -285,7 +286,7 @@ int do_cb (unsigned char *cc_block)
             temp[3]=cc_block[2];
             if (timeok)
             {
-                if(write_format!=OF_RCWT)
+                if(write_format!=CCX_OF_RCWT)
                    do_708 ((const unsigned char *) temp, 4);
                 else
                     writercwtdata(cc_block);

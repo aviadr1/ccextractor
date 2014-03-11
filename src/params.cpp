@@ -23,7 +23,7 @@ const char *spell_builtin[]=
     NULL
 }; 
 
-int stringztoms (const char *s, boundary_time *bt)
+int stringztoms (const char *s, ccx_boundary_time *bt)
 {
     unsigned ss=0, mm=0, hh=0;
     int value=-1;
@@ -257,36 +257,36 @@ void set_output_format (const char *format)
     while (*format=='-')
         format++;
     if (strcmp (format,"srt")==0)
-        write_format=OF_SRT;
+        write_format=CCX_OF_SRT;
     else if (strcmp (format,"sami")==0 || strcmp (format,"smi")==0) 
-        write_format=OF_SAMI;
+        write_format=CCX_OF_SAMI;
     else if (strcmp (format,"transcript")==0 || strcmp (format,"txt")==0)
 	{
-        write_format=OF_TRANSCRIPT;
+        write_format=CCX_OF_TRANSCRIPT;
 		timestamps_on_transcript=0;
 	}
     else if (strcmp (format,"timedtranscript")==0 || strcmp (format,"ttxt")==0)
 	{
-        write_format=OF_TRANSCRIPT;
-		if (date_format==ODF_NONE)		
-			date_format=ODF_HHMMSSMS;
+        write_format=CCX_OF_TRANSCRIPT;
+		if (date_format==CCX_ODF_NONE)		
+			date_format=CCX_ODF_HHMMSSMS;
 		timestamps_on_transcript=1;	
 	}
     else if (strcmp (format,"raw")==0)
-        write_format=OF_RAW;
+        write_format=CCX_OF_RAW;
     else if (strcmp (format, "smptett")==0)
-      write_format=OF_SMPTETT ;
+      write_format=CCX_OF_SMPTETT ;
     else if (strcmp (format,"bin")==0)
-        write_format=OF_RCWT;
+        write_format=CCX_OF_RCWT;
     else if (strcmp (format,"null")==0)
-        write_format=OF_NULL;
+        write_format=CCX_OF_NULL;
     else if (strcmp (format,"dvdraw")==0)
     {
-        write_format=OF_RAW;
+        write_format=CCX_OF_RAW;
         rawmode=1;
     }
     else if (strcmp (format,"spupng")==0)
-        write_format=OF_SPUPNG;
+        write_format=CCX_OF_SPUPNG;
     else
         fatal (EXIT_MALFORMED_PARAMETER, "Unknown output file format: %s\n", format);
 }
@@ -296,21 +296,21 @@ void set_input_format (const char *format)
     while (*format=='-')
         format++;
     if (strcmp (format,"es")==0) // Does this actually do anything?
-        auto_stream = SM_ELEMENTARY_OR_NOT_FOUND;
+        auto_stream = CCX_SM_ELEMENTARY_OR_NOT_FOUND;
     else if (strcmp (format,"ts")==0)
-        auto_stream = SM_TRANSPORT;
+        auto_stream = CCX_SM_TRANSPORT;
     else if (strcmp (format,"ps")==0 || strcmp (format,"nots")==0)
         auto_stream = SM_PROGRAM;
     else if (strcmp (format,"asf")==0 || strcmp (format,"dvr-ms")==0)
-        auto_stream = SM_ASF;
+        auto_stream = CCX_SM_ASF;
     else if (strcmp (format,"raw")==0)
-        auto_stream = SM_MCPOODLESRAW;
+        auto_stream = CCX_SM_MCPOODLESRAW;
     else if (strcmp (format,"bin")==0)
-        auto_stream = SM_RCWT;
+        auto_stream = CCX_SM_RCWT;
     else if (strcmp (format,"mp4")==0)
-        auto_stream = SM_MP4;
+        auto_stream = CCX_SM_MP4;
     else if (strcmp (format,"hex")==0)
-        auto_stream = SM_HEX_DUMP;
+        auto_stream = CCX_SM_HEX_DUMP;
     else
         fatal (EXIT_MALFORMED_PARAMETER, "Unknown input file format: %s\n", format);
 }
@@ -1218,17 +1218,17 @@ void parse_parameters (int argc, char *argv[])
 		}
         if (strstr (argv[i],"-unicode")!=NULL)
 		{
-            encoding=ENC_UNICODE;
+            encoding=CCX_ENC_UNICODE;
 			continue;
 		}
         if (strstr (argv[i],"-utf8")!=NULL)
 		{
-            encoding=ENC_UTF_8;
+            encoding=CCX_ENC_UTF_8;
 			continue;
 		}
         if (strstr (argv[i],"-latin1")!=NULL)
 		{
-			encoding=ENC_LATIN_1;
+			encoding=CCX_ENC_LATIN_1;
 			continue;
 		}
         if (strcmp (argv[i],"-poc")==0 || strcmp (argv[i],"--usepicorder")==0)
@@ -1348,12 +1348,12 @@ void parse_parameters (int argc, char *argv[])
 		}		
         if (strcmp (argv[i],"-sects")==0)
 		{
-			date_format=ODF_SECONDS;
+			date_format=CCX_ODF_SECONDS;
 			continue;
 		}
         if (strcmp (argv[i],"-datets")==0)
 		{
-			date_format=ODF_DATE;
+			date_format=CCX_ODF_DATE;
 			continue;
 		}
         if (strcmp (argv[i],"-teletext")==0)

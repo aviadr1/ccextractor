@@ -3,7 +3,7 @@
 
 /* The timing here is not PTS based, but output based, i.e. user delay must be accounted for
    if there is any */
-void write_stringz_as_srt (char *string, struct s_write *wb, LLONG ms_start, LLONG ms_end)
+void write_stringz_as_srt (char *string, struct ccx_s_write *wb, LLONG ms_start, LLONG ms_end)
 {
     unsigned h1,m1,s1,ms1;
     unsigned h2,m2,s2,ms2;
@@ -50,7 +50,7 @@ void write_stringz_as_srt (char *string, struct s_write *wb, LLONG ms_start, LLO
     while (begin<unescaped+len)
     {
         unsigned int u = encode_line (el, begin);
-        if (encoding!=ENC_UNICODE)
+        if (encoding!=CCX_ENC_UNICODE)
         {
             dbg_print(CCX_DMT_608, "\r");
             dbg_print(CCX_DMT_608, "%s\n",subline);
@@ -66,7 +66,7 @@ void write_stringz_as_srt (char *string, struct s_write *wb, LLONG ms_start, LLO
 	free(el);
 }
 
-int write_cc_buffer_as_srt (struct eia608_screen *data, struct s_write *wb)
+int write_cc_buffer_as_srt (struct eia608_screen *data, struct ccx_s_write *wb)
 {
     unsigned h1,m1,s1,ms1;
     unsigned h2,m2,s2,ms2;
@@ -175,7 +175,7 @@ int write_cc_buffer_as_srt (struct eia608_screen *data, struct s_write *wb)
 
 			}
             int length = get_decoder_line_encoded (subline, i, data);
-            if (encoding!=ENC_UNICODE)
+            if (encoding!=CCX_ENC_UNICODE)
             {
                 dbg_print(CCX_DMT_608, "\r");
                 dbg_print(CCX_DMT_608, "%s\n",subline);

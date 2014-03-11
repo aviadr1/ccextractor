@@ -137,14 +137,14 @@ void xds_init()
 	memset (current_xds_program_type,0,33); 
 }
 
-void xds_write_transcript_line_suffix (struct s_write *wb)
+void xds_write_transcript_line_suffix (struct ccx_s_write *wb)
 {
 	if (!wb || wb->fh==-1)
 		return;
     write (wb->fh, encoded_crlf, encoded_crlf_length);
 }
 
-void xds_write_transcript_line_prefix (struct s_write *wb)
+void xds_write_transcript_line_prefix (struct ccx_s_write *wb)
 {
 	unsigned h1,m1,s1,ms1;
 	unsigned h2,m2,s2,ms2;

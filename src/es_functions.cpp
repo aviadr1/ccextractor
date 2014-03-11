@@ -568,7 +568,7 @@ static int gop_header(struct bitstream *esstream)
         fatal(EXIT_BUG_BUG, "Impossible!");
 
     unsigned drop_frame_flag = (unsigned) read_bits(esstream,1);
-    struct gop_time_code gtc;
+    struct ccx_gop_time_code gtc;
     gtc.time_code_hours = (int) read_bits(esstream,5);
     gtc.time_code_minutes = (int) read_bits(esstream,6);
     skip_bits(esstream,1); // Marker bit
@@ -723,7 +723,7 @@ static int read_pic_info(struct bitstream *esstream)
 
     // A new anchor frame - flush buffered caption data. Might be flushed
     // in GOP header already.
-    if (picture_coding_type==I_FRAME || picture_coding_type==P_FRAME)
+    if (picture_coding_type==CCX_VIDEO_FRAME_TYPE_I_FRAME || picture_coding_type==CCX_VIDEO_FRAME_TYPE_P_FRAME)
     {		
 //		if (((picture_structure != 0x1) && (picture_structure != 0x2)) ||
 //		(temporal_reference != current_tref))
@@ -794,7 +794,7 @@ static int read_pic_info(struct bitstream *esstream)
         saw_gop_header = 0; // Reset the value
     }
 
-    if ( !saw_gop_header && picture_coding_type==I_FRAME )
+    if ( !saw_gop_header && picture_coding_type==CCX_VIDEO_FRAME_TYPE_I_FRAME )
     {
         // A new GOP beginns with an I-frame. Lets hope there are
         // never more than one per GOP
@@ -867,9 +867,9 @@ static int pic_header(struct bitstream *esstream)
     if (esstream->bitsleft < 0)
         return 0;
 
-    if ( !(picture_coding_type==I_FRAME
-           || picture_coding_type==P_FRAME
-           || picture_coding_type==B_FRAME))
+    if ( !(picture_coding_type==CCX_VIDEO_FRAME_TYPE_I_FRAME
+           || picture_coding_type==CCX_VIDEO_FRAME_TYPE_P_FRAME
+           || picture_coding_type==CCX_VIDEO_FRAME_TYPE_B_FRAME))
     {
         if (esstream->bitsleft >= 0) // When bits left, this is wrong
             esstream->error = 1;

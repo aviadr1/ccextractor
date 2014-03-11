@@ -12,7 +12,7 @@ void set_fts(void)
     int pts_jump = 0;
 
     // ES don't have PTS unless GOP timing is used
-    if (!pts_set && stream_mode==SM_ELEMENTARY_OR_NOT_FOUND)
+    if (!pts_set && stream_mode==CCX_SM_ELEMENTARY_OR_NOT_FOUND)
         return;
 
     // First check for timeline jump (only when min_pts was
@@ -34,10 +34,10 @@ void set_fts(void)
 		// Disable too in MP4, specs doesn't say that there can't be a jump
         switch (stream_mode)
         {
-            case SM_MCPOODLESRAW:
-            case SM_RCWT:
-			case SM_MP4:
-			case SM_HEX_DUMP:
+            case CCX_SM_MCPOODLESRAW:
+            case CCX_SM_RCWT:
+			case CCX_SM_MP4:
+			case CCX_SM_HEX_DUMP:
                 dif = 0;
                 break;
             default:
@@ -55,7 +55,7 @@ void set_fts(void)
 
             // Discard the gap if it is not on an I-frame or temporal reference
             // zero.
-            if(current_tref != 0 && current_picture_coding_type != I_FRAME)
+            if(current_tref != 0 && current_picture_coding_type != CCX_VIDEO_FRAME_TYPE_I_FRAME)
             {
                 fts_now = fts_max;
                 mprint ("Change did not occur on first frame - probably a broken GOP\n");
@@ -254,7 +254,7 @@ void print_debug_timing( void )
            get_fts_max()+LLONG(1000.0/current_fps)-goplenms);
 }
 
-void calculate_ms_gop_time (struct gop_time_code *g)
+void calculate_ms_gop_time (struct ccx_gop_time_code *g)
 {
     int seconds=(g->time_code_hours*3600)+(g->time_code_minutes*60)+g->time_code_seconds;
     g->ms = LLONG( 1000*(seconds + g->time_code_pictures/current_fps) );
@@ -262,7 +262,7 @@ void calculate_ms_gop_time (struct gop_time_code *g)
         g->ms += 24*60*60*1000;
 }
 
-int gop_accepted(struct gop_time_code* g )
+int gop_accepted(struct ccx_gop_time_code* g )
 {
     if (! ((g->time_code_hours <= 23) 
         && (g->time_code_minutes <= 59) 

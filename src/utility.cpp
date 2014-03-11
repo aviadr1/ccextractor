@@ -39,22 +39,22 @@ void millis_to_date (uint64_t timestamp, char *buffer)
 	struct tm *time_struct=NULL;
 	switch (date_format)
 	{
-		case ODF_NONE:
+		case CCX_ODF_NONE:
 			buffer[0]=0;
 			break;
-		case ODF_HHMMSS:
+		case CCX_ODF_HHMMSS:
 			timestamp_to_srttime (timestamp, buffer);
 			buffer[8]=0;
 			break;
-		case ODF_HHMMSSMS:
+		case CCX_ODF_HHMMSSMS:
 			timestamp_to_srttime (timestamp, buffer);
 			break;
-		case ODF_SECONDS:
+		case CCX_ODF_SECONDS:
 			secs=(time_t) (timestamp/1000);
 			millis=(time_t) (timestamp%1000);
 			sprintf (buffer, "%lu%c%03u", (unsigned long) secs,millis_separator,(unsigned) millis);
 			break;
-		case ODF_DATE:
+		case CCX_ODF_DATE:
 			secs=(time_t) (timestamp/1000);
 			millis=(unsigned int) (timestamp%1000);			
             time_struct = gmtime(&secs);
@@ -255,7 +255,7 @@ void dump (LLONG mask, unsigned char *start, int l, unsigned long abs_start, uns
     }
 }
 
-void init_boundary_time (boundary_time *bt)
+void init_boundary_time (ccx_boundary_time *bt)
 {
     bt->hh=0;
     bt->mm=0;

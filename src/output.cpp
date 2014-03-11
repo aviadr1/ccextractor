@@ -6,9 +6,9 @@
 #endif
 
 
-void init_write (struct s_write *wb, int field)
+void init_write (struct ccx_s_write *wb, int field)
 {
-	memset(wb, 0, sizeof(struct s_write));
+	memset(wb, 0, sizeof(struct ccx_s_write));
     wb->fh=-1;
     wb->filename=NULL;	
     wb->data608=(struct eia608 *) malloc (sizeof (struct eia608));
@@ -17,34 +17,34 @@ void init_write (struct s_write *wb, int field)
     init_eia608 (wb->data608);
 } 
 
-void writeraw (const unsigned char *data, int length, struct s_write *wb)
+void writeraw (const unsigned char *data, int length, struct ccx_s_write *wb)
 {
     write (wb->fh,data,length);
 }
 
-void writedata (const unsigned char *data, int length, struct s_write *wb)
+void writedata (const unsigned char *data, int length, struct ccx_s_write *wb)
 {
     // Don't do anything for empty data
     if (data==NULL)
         return;
 
-    if (write_format==OF_RAW)
+    if (write_format==CCX_OF_RAW)
 	{
 		if (wb)
 			writeraw (data,length,wb);
 	}
-    else if (write_format==OF_SMPTETT || 
-             write_format==OF_SAMI ||
-             write_format==OF_SRT ||
-             write_format==OF_TRANSCRIPT ||
-             write_format==OF_SPUPNG ||
-			 write_format==OF_NULL)
+    else if (write_format==CCX_OF_SMPTETT || 
+             write_format==CCX_OF_SAMI ||
+             write_format==CCX_OF_SRT ||
+             write_format==CCX_OF_TRANSCRIPT ||
+             write_format==CCX_OF_SPUPNG ||
+			 write_format==CCX_OF_NULL)
         process608 (data,length,wb);
     else
         fatal(EXIT_BUG_BUG, "Should not be reached!");
 }
 
-void flushbuffer (struct s_write *wb, int closefile)
+void flushbuffer (struct ccx_s_write *wb, int closefile)
 {
     if (closefile && wb!=NULL && wb->fh!=-1 && !cc_to_stdout)	
         close (wb->fh);	

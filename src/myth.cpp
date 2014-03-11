@@ -44,7 +44,7 @@ int cc608_parity_table[256];
 #define PADDING_STREAM     0x1be
 #define PRIVATE_STREAM_2   0x1bf
 
-extern struct s_write wbout1, wbout2; // Output structures
+extern struct ccx_s_write wbout1, wbout2; // Output structures
 #define AUDIO_ID 0xc0
 #define VIDEO_ID 0xe0
 #define AC3_ID   0x80
