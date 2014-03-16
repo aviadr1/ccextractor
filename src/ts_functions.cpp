@@ -30,8 +30,8 @@ unsigned autoprogram =0; // Try to find a stream with captions automatically (no
 unsigned cappid = 0; // PID for stream that holds caption information
 unsigned forced_cappid = 0; // If 1, never mess with the selected PID
 int datastreamtype = -1; // User WANTED stream type (i.e. use the stream that has this type)
-unsigned cap_stream_type=UNKNOWNSTREAM; // Stream type for cappid
-unsigned forced_streamtype=UNKNOWNSTREAM; // User selected (forced) stream type
+unsigned cap_stream_type=CCX_STREAM_TYPE_UNKNOWNSTREAM; // Stream type for cappid
+unsigned forced_streamtype=CCX_STREAM_TYPE_UNKNOWNSTREAM; // User selected (forced) stream type
 unsigned pmt_warning_shown=0; // Only display warning once
 
 struct PAT_entry
@@ -47,7 +47,7 @@ struct PMT_entry
 	unsigned program_number;
 	unsigned PMT_PID;
 	unsigned elementary_PID;
-	unsigned stream_type;
+	unsigned ccx_stream_type;
 	unsigned printable_stream_type;
 };
 
@@ -56,28 +56,32 @@ struct PMT_entry
 static PAT_entry pmt_array[TS_PMT_MAP_SIZE] = { 0 };
 static uint16_t pmt_array_length = 0;
 
-// Descriptions for ts stream_type
+// Descriptions for ts ccx_stream_type
 const char *desc[256];
 
 void init_ts_constants(void)
 {
-    desc[UNKNOWNSTREAM] = "Unknown";
-    desc[VIDEO_MPEG1] = "MPEG-1 video";
-    desc[VIDEO_MPEG2] = "MPEG-2 video";
-    desc[AUDIO_MPEG1] = "MPEG-1 audio";
-    desc[AUDIO_MPEG2] = "MPEG-2 audio";
-	desc[MHEG_PACKETS] = "MHEG Packets";
-	desc[PRIVATE_TABLE_MPEG2] = "MPEG-2 private table sections";
-	desc[PRIVATE_MPEG2] ="MPEG-2 private data";
-	desc[MPEG2_ANNEX_A_DSM_CC] = "MPEG-2 Annex A DSM CC";
-	desc[ITU_T_H222_1] = "ITU-T Rec. H.222.1";
-    desc[AUDIO_AAC] =   "AAC audio";
-    desc[VIDEO_MPEG4] = "MPEG-4 video";
-    desc[VIDEO_H264] =  "H.264 video";
-	desc[PRIVATE_USER_MPEG2] = "MPEG-2 User Private";
-    desc[AUDIO_AC3] =   "AC3 audio";
-    desc[AUDIO_DTS] =   "DTS audio";
-    desc[AUDIO_HDMV_DTS]="HDMV audio";
+    desc[CCX_STREAM_TYPE_UNKNOWNSTREAM] = "Unknown";
+    desc[CCX_STREAM_TYPE_VIDEO_MPEG1] = "MPEG-1 video";
+    desc[CCX_STREAM_TYPE_VIDEO_MPEG2] = "MPEG-2 video";
+    desc[CCX_STREAM_TYPE_AUDIO_MPEG1] = "MPEG-1 audio";
+    desc[CCX_STREAM_TYPE_AUDIO_MPEG2] = "MPEG-2 audio";
+	desc[CCX_STREAM_TYPE_MHEG_PACKETS] = "MHEG Packets";
+	desc[CCX_STREAM_TYPE_PRIVATE_TABLE_MPEG2] = "MPEG-2 private table sections";
+	desc[CCX_STREAM_TYPE_PRIVATE_MPEG2] ="MPEG-2 private data";
+	desc[CCX_STREAM_TYPE_MPEG2_ANNEX_A_DSM_CC] = "MPEG-2 Annex A DSM CC";
+	desc[CCX_STREAM_TYPE_ITU_T_H222_1] = "ITU-T Rec. H.222.1";
+    desc[CCX_STREAM_TYPE_AUDIO_AAC] =   "AAC audio";
+    desc[CCX_STREAM_TYPE_VIDEO_MPEG4] = "MPEG-4 video";
+    desc[CCX_STREAM_TYPE_VIDEO_H264] =  "H.264 video";
+	desc[CCX_STREAM_TYPE_PRIVATE_USER_MPEG2] = "MPEG-2 User Private";
+    desc[CCX_STREAM_TYPE_AUDIO_AC3] =   "AC3 audio";
+    desc[CCX_STREAM_TYPE_AUDIO_DTS] =   "DTS audio";
+    desc[CCX_STREAM_TYPE_AUDIO_HDMV_DTS]="HDMV audio";
+	desc[CCX_STREAM_TYPE_ISO_IEC_13818_6_TYPE_A] = "ISO/IEC 13818-6 type A";
+	desc[CCX_STREAM_TYPE_ISO_IEC_13818_6_TYPE_B] = "ISO/IEC 13818-6 type B";
+	desc[CCX_STREAM_TYPE_ISO_IEC_13818_6_TYPE_C] = "ISO/IEC 13818-6 type C";
+	desc[CCX_STREAM_TYPE_ISO_IEC_13818_6_TYPE_D] = "ISO/IEC 13818-6 type D";
 }
 
 
@@ -100,7 +104,7 @@ int ts_readpacket(void)
         if (printtsprob)
         {
             mprint ("\nProblem: No TS header mark (filepos=%lld). Received bytes:\n", past);
-            dump (DMT_GENERIC_NOTICES, tspacket,4, 0, 0);
+            dump (CCX_DMT_GENERIC_NOTICES, tspacket,4, 0, 0);
 
             mprint ("Skip forward to the next TS header mark.\n");
             printtsprob = 0;
@@ -155,7 +159,7 @@ int ts_readpacket(void)
     if (transport_error_indicator)
     {
         mprint ("Warning: Defective (error indicator on) TS packet (filepos=%lld):\n", past);
-        dump (DMT_GENERIC_NOTICES, tspacket, 188, 0, 0);
+        dump (CCX_DMT_GENERIC_NOTICES, tspacket, 188, 0, 0);
     }
 
     unsigned adaptation_field_length = 0;
@@ -188,7 +192,7 @@ int ts_readpacket(void)
         payload_length = tspacket+188-payload_start;
     }
 
-    dbg_print(DMT_PARSE, "TS pid: %d  PES start: %d  counter: %u  payload length: %u  adapt length: %d\n",
+    dbg_print(CCX_DMT_PARSE, "TS pid: %d  PES start: %d  counter: %u  payload length: %u  adapt length: %d\n",
             pid, payload_start_indicator, ccounter, payload_length,
             int(adaptation_field_length));
 
@@ -198,7 +202,7 @@ int ts_readpacket(void)
     {
         // This renders the package invalid
         payload_length = 0;
-        dbg_print(DMT_PARSE, "  Reject package - set length to zero.\n");
+        dbg_print(CCX_DMT_PARSE, "  Reject package - set length to zero.\n");
     }
 
     // Save data in global struct
@@ -210,38 +214,43 @@ int ts_readpacket(void)
 	payload.transport_error = transport_error_indicator;
     if (payload_length == 0)
     {
-        dbg_print(DMT_PARSE, "  No payload in package.\n");
+        dbg_print(CCX_DMT_PARSE, "  No payload in package.\n");
     }
 
     // Store packet information
     return 1;
 }
 
-unsigned get_printable_stream_type (unsigned stream_type)
+unsigned get_printable_stream_type (unsigned ccx_stream_type)
 {
-	unsigned tmp_stream_type=stream_type;	
-    switch (stream_type)
+	unsigned tmp_stream_type=ccx_stream_type;	
+	switch (ccx_stream_type)
     {
-		case VIDEO_MPEG2:
-		case VIDEO_H264:
-		case PRIVATE_MPEG2:
-		case MHEG_PACKETS:
-		case MPEG2_ANNEX_A_DSM_CC:
-		case ITU_T_H222_1:
-		case VIDEO_MPEG1:
-		case AUDIO_MPEG1:
-		case AUDIO_MPEG2:
-		case AUDIO_AAC:
-		case VIDEO_MPEG4:
-		case AUDIO_AC3:
-		case AUDIO_DTS:
-		case AUDIO_HDMV_DTS:			
+		case CCX_STREAM_TYPE_VIDEO_MPEG2:
+		case CCX_STREAM_TYPE_VIDEO_H264:
+		case CCX_STREAM_TYPE_PRIVATE_MPEG2:
+		case CCX_STREAM_TYPE_PRIVATE_TABLE_MPEG2:
+		case CCX_STREAM_TYPE_MHEG_PACKETS:
+		case CCX_STREAM_TYPE_MPEG2_ANNEX_A_DSM_CC:
+		case CCX_STREAM_TYPE_ISO_IEC_13818_6_TYPE_A:
+		case CCX_STREAM_TYPE_ISO_IEC_13818_6_TYPE_B:
+		case CCX_STREAM_TYPE_ISO_IEC_13818_6_TYPE_C:
+		case CCX_STREAM_TYPE_ISO_IEC_13818_6_TYPE_D:
+		case CCX_STREAM_TYPE_ITU_T_H222_1:
+		case CCX_STREAM_TYPE_VIDEO_MPEG1:
+		case CCX_STREAM_TYPE_AUDIO_MPEG1:
+		case CCX_STREAM_TYPE_AUDIO_MPEG2:
+		case CCX_STREAM_TYPE_AUDIO_AAC:
+		case CCX_STREAM_TYPE_VIDEO_MPEG4:
+		case CCX_STREAM_TYPE_AUDIO_AC3:
+		case CCX_STREAM_TYPE_AUDIO_DTS:
+		case CCX_STREAM_TYPE_AUDIO_HDMV_DTS:			
 			break;
 		default:
-			if (stream_type>=0x80 && stream_type<=0xFF) 
-				tmp_stream_type=PRIVATE_USER_MPEG2;
+			if (ccx_stream_type>=0x80 && ccx_stream_type<=0xFF) 
+				tmp_stream_type=CCX_STREAM_TYPE_PRIVATE_USER_MPEG2;
 			else
-				tmp_stream_type = UNKNOWNSTREAM;
+				tmp_stream_type = CCX_STREAM_TYPE_UNKNOWNSTREAM;
 			break;
     }
 	return tmp_stream_type;
@@ -269,7 +278,7 @@ int process_PAT (void)
 	int is_multiprogram=0;
 	static int warning_program_not_found_shown=0;
 
-	/* if ((forced_cappid || telext_mode==TXT_IN_USE) && cap_stream_type!=UNKNOWNSTREAM) // Already know what we need, skip
+	/* if ((forced_cappid || telext_mode==CCX_TXT_IN_USE) && cap_stream_type!=CCX_STREAM_TYPE_UNKNOWNSTREAM) // Already know what we need, skip
 		return 0;  */
 
     if (!payload.pesstart)
@@ -285,13 +294,13 @@ int process_PAT (void)
     unsigned last_section_number = payload_start[7];
 	if (section_number > last_section_number) // Impossible: Defective PAT
 	{
-		dbg_print(DMT_PAT, "Skipped defective PAT packet, section_number=%u but last_section_number=%u\n", 
+		dbg_print(CCX_DMT_PAT, "Skipped defective PAT packet, section_number=%u but last_section_number=%u\n", 
 			section_number, last_section_number);
 		return gotpes;
 	}
     if ( last_section_number > 0 )
     {
-		dbg_print(DMT_PAT, "Long PAT packet (%u / %u), skipping.\n",
+		dbg_print(CCX_DMT_PAT, "Long PAT packet (%u / %u), skipping.\n",
 			section_number, last_section_number);
 		return gotpes;
         /* fatal(EXIT_BUG_BUG,
@@ -301,7 +310,7 @@ int process_PAT (void)
 	if (last_pat_payload!=NULL && payload_length == last_pat_length && 
 		!memcmp (payload_start, last_pat_payload, payload_length))
 	{
-		// dbg_print(DMT_PAT, "PAT hasn't changed, skipping.\n");
+		// dbg_print(CCX_DMT_PAT, "PAT hasn't changed, skipping.\n");
 		return 0;
 	}
 
@@ -309,10 +318,10 @@ int process_PAT (void)
 	{
 		mprint ("Notice: PAT changed, clearing all variables.\n");
 		clear_PMT_array();
-		if (telext_mode==TXT_IN_USE)
-			telext_mode=TXT_AUTO_NOT_YET_FOUND;
+		if (telext_mode==CCX_TXT_IN_USE)
+			telext_mode=CCX_TXT_AUTO_NOT_YET_FOUND;
 		cappid=0;
-		cap_stream_type=UNKNOWNSTREAM;			
+		cap_stream_type=CCX_STREAM_TYPE_UNKNOWNSTREAM;			
 		memset (PIDs_seen,0,sizeof (int) *65536); // Forget all we saw
 		if (!tlt_config.user_page) // If the user didn't select a page...
 			tlt_config.page=0; // ..forget whatever we detected.
@@ -349,11 +358,11 @@ int process_PAT (void)
 
     unsigned programm_data = section_length - 5 - 4; // prev. bytes and CRC
 
-    dbg_print(DMT_PAT, "Read PAT packet (id: %u) ts-id: 0x%04x\n",
+    dbg_print(CCX_DMT_PAT, "Read PAT packet (id: %u) ts-id: 0x%04x\n",
            table_id, transport_stream_id);
-    dbg_print(DMT_PAT, "  section length: %u  number: %u  last: %u\n",
+    dbg_print(CCX_DMT_PAT, "  section length: %u  number: %u  last: %u\n",
            section_length, section_number, last_section_number);
-    dbg_print(DMT_PAT, "  version_number: %u  current_next_indicator: %u\n",
+    dbg_print(CCX_DMT_PAT, "  version_number: %u  current_next_indicator: %u\n",
            version_number, current_next_indicator);
 
     if ( programm_data+4 > payload_length )
@@ -364,7 +373,7 @@ int process_PAT (void)
 
     unsigned ts_prog_num = 0;
     unsigned ts_prog_map_pid = 0;
-    dbg_print(DMT_PAT, "\nProgram association section (PAT)\n");
+    dbg_print(CCX_DMT_PAT, "\nProgram association section (PAT)\n");
 
 	int temp=0;
 	for( unsigned i=0; i < programm_data; i+=4)
@@ -387,7 +396,7 @@ int process_PAT (void)
         unsigned prog_map_pid = ((payload_start[i+2] << 8)
                                  | payload_start[i+3]) & 0x1FFF;
 
-        dbg_print(DMT_PAT, "  Program number: %u  -> PMTPID: %u\n",
+        dbg_print(CCX_DMT_PAT, "  Program number: %u  -> PMTPID: %u\n",
                     program_number, prog_map_pid);
 
 		if( !program_number )
@@ -460,7 +469,7 @@ int process_PAT (void)
 	return gotpes;
 }
 
-void process_mpeg_descriptor (unsigned char *data, unsigned length)
+void process_ccx_mpeg_descriptor (unsigned char *data, unsigned length)
 {
 	const char *txt_teletext_type[]={"Reserved", "Initial page", "Subtitle page", "Additional information page", "Programme schedule page", 
 		"Subtitle page for hearing impaired people"};
@@ -469,7 +478,7 @@ void process_mpeg_descriptor (unsigned char *data, unsigned length)
 		return;
 	switch (data[0])
 	{
-		case ISO639_LANGUAGE:
+		case CCX_MPEG_DSC_ISO639_LANGUAGE:
 			if (length<2)
 				return;
 			l=data[1];
@@ -478,19 +487,19 @@ void process_mpeg_descriptor (unsigned char *data, unsigned length)
 			for (i=0;i<l;i+=4)
 			{
 				char c1=data[i+2], c2=data[i+3], c3=data[i+4];				
-				dbg_print(DMT_PMT, "             ISO639: %c%c%c\n",c1>=0x20?c1:' ',
+				dbg_print(CCX_DMT_PMT, "             ISO639: %c%c%c\n",c1>=0x20?c1:' ',
 																   c2>=0x20?c2:' ',
 																   c3>=0x20?c3:' ');
 			}
 			break;
-		case VBI_DATA_DESCRIPTOR:
-			dbg_print(DMT_PMT, "DVB VBI data descriptor (not implemented)\n");
+		case CCX_MPEG_DSC_VBI_DATA_DESCRIPTOR:
+			dbg_print(CCX_DMT_PMT, "DVB VBI data descriptor (not implemented)\n");
 			break;
-		case VBI_TELETEXT_DESCRIPTOR:
-			dbg_print(DMT_PMT, "DVB VBI teletext descriptor\n");
+		case CCX_MPEG_DSC_VBI_TELETEXT_DESCRIPTOR:
+			dbg_print(CCX_DMT_PMT, "DVB VBI teletext descriptor\n");
 			break;
-		case TELETEXT_DESCRIPTOR:
-			dbg_print(DMT_PMT, "             DVB teletext descriptor\n");
+		case CCX_MPEG_DSC_TELETEXT_DESCRIPTOR:
+			dbg_print(CCX_DMT_PMT, "             DVB teletext descriptor\n");
 			if (length<2)
 				return;
 			l=data[1];
@@ -502,18 +511,18 @@ void process_mpeg_descriptor (unsigned char *data, unsigned length)
 				unsigned teletext_type=(data[i+5]&0xF8)>>3; // 5 MSB
 				unsigned magazine_number=data[i+5]&0x7; // 3 LSB
 				unsigned teletext_page_number=data[i+6];
-				dbg_print (DMT_PMT, "                        ISO639: %c%c%c\n",c1>=0x20?c1:' ',
+				dbg_print (CCX_DMT_PMT, "                        ISO639: %c%c%c\n",c1>=0x20?c1:' ',
 																   c2>=0x20?c2:' ',
 																   c3>=0x20?c3:' ');
-				dbg_print (DMT_PMT, "                 Teletext type: %s (%02X)\n", (teletext_type<6? txt_teletext_type[teletext_type]:"Reserved for future use"),
+				dbg_print (CCX_DMT_PMT, "                 Teletext type: %s (%02X)\n", (teletext_type<6? txt_teletext_type[teletext_type]:"Reserved for future use"),
 					teletext_type);
-				dbg_print (DMT_PMT, "                  Initial page: %02X\n",teletext_page_number);
+				dbg_print (CCX_DMT_PMT, "                  Initial page: %02X\n",teletext_page_number);
 			}
 			break;
 		default:
-			if (data[0]==REGISTRATION) // Registration descriptor, could be useful eventually
+			if (data[0]==CCX_MPEG_DSC_REGISTRATION) // Registration descriptor, could be useful eventually
 				break;			
-			if (data[0]==DATA_STREAM_ALIGNMENT) // Data stream alignment descriptor
+			if (data[0]==CCX_MPEG_DSC_DATA_STREAM_ALIGNMENT) // Data stream alignment descriptor
 				break;
 			if (data[0]>=0x13 && data[0]<=0x3F) // Reserved
 				break;
@@ -534,8 +543,8 @@ int process_PMT (int pos)
 {
 	int must_flush=0;
 
-	if ((forced_cappid || (telext_mode==TXT_IN_USE && cappid)) && 
-		cap_stream_type!=UNKNOWNSTREAM) // Already know what we need, skip
+	if ((forced_cappid || (telext_mode==CCX_TXT_IN_USE && cappid)) && 
+		cap_stream_type!=CCX_STREAM_TYPE_UNKNOWNSTREAM) // Already know what we need, skip
 		return 0; 
 
 	if (!payload.pesstart) // Not the first entry. Ignore it, it should not be here.		
@@ -549,7 +558,7 @@ int process_PMT (int pos)
 	if (pmt_array[pos].last_pmt_payload!=NULL && payload_length == pmt_array[pos].last_pmt_length && 
 		!memcmp (payload_start, pmt_array[pos].last_pmt_payload, payload_length))
 	{
-		// dbg_print(DMT_PMT, "PMT hasn't changed, skipping.\n");
+		// dbg_print(CCX_DMT_PMT, "PMT hasn't changed, skipping.\n");
 		return 0;
 	}
 	pmt_array[pos].last_pmt_payload=(unsigned char *) 
@@ -594,26 +603,26 @@ int process_PMT (int pos)
 
     unsigned stream_data = section_length - 9 - pi_length - 4; // prev. bytes and CRC
 
-    dbg_print(DMT_PARSE, "Read PMT packet  (id: %u) program number: %u\n",
+    dbg_print(CCX_DMT_PARSE, "Read PMT packet  (id: %u) program number: %u\n",
            table_id, program_number);
-    dbg_print(DMT_PARSE, "  section length: %u  number: %u  last: %u\n",
+    dbg_print(CCX_DMT_PARSE, "  section length: %u  number: %u  last: %u\n",
            section_length, section_number, last_section_number);
-    dbg_print(DMT_PARSE, "  version_number: %u  current_next_indicator: %u\n",
+    dbg_print(CCX_DMT_PARSE, "  version_number: %u  current_next_indicator: %u\n",
            version_number, current_next_indicator);
-    dbg_print(DMT_PARSE, "  PCR_PID: %u  data length: %u  payload_length: %u\n",
+    dbg_print(CCX_DMT_PARSE, "  PCR_PID: %u  data length: %u  payload_length: %u\n",
            PCR_PID, stream_data, payload_length);
 
     if (!pmt_warning_shown && stream_data+4 > payload_length )
     {
-		dbg_print (DMT_GENERIC_NOTICES, "\rWarning: Probably parsing incomplete PMT, expected data longer than available payload.\n");
+		dbg_print (CCX_DMT_GENERIC_NOTICES, "\rWarning: Probably parsing incomplete PMT, expected data longer than available payload.\n");
 		pmt_warning_shown=1;
     }
-	dbg_print(DMT_PMT, "\nProgram Map Table for program %u, PMT PID: %u\n",
+	dbg_print(CCX_DMT_PMT, "\nProgram Map Table for program %u, PMT PID: %u\n",
 		program_number,payload.pid);
 	// Make a note of the program number for all PIDs, so we can report it later
     for( unsigned i=0; i < stream_data && (i+4)<payload_length; i+=5)
     {
-        unsigned stream_type = payload_start[i];
+        unsigned ccx_stream_type = payload_start[i];
         unsigned elementary_PID = (((payload_start[i+1] & 0x1F) << 8)
                                    | payload_start[i+2]);
         unsigned ES_info_length = (((payload_start[i+3] & 0x0F) << 8)
@@ -625,16 +634,16 @@ int process_PMT (int pos)
 				fatal (EXIT_NOT_ENOUGH_MEMORY, "Not enough memory to process PMT.");
 		}
 		PIDs_programs[elementary_PID]->elementary_PID=elementary_PID;
-		PIDs_programs[elementary_PID]->stream_type=stream_type;
+		PIDs_programs[elementary_PID]->ccx_stream_type=ccx_stream_type;
 		PIDs_programs[elementary_PID]->program_number=program_number;
 		PIDs_programs[elementary_PID]->PMT_PID=payload.pid;		
-		PIDs_programs[elementary_PID]->printable_stream_type=get_printable_stream_type (stream_type);
-		dbg_print(DMT_PMT, "%6u | %3X (%3u) | %s\n",elementary_PID,stream_type,stream_type,
+		PIDs_programs[elementary_PID]->printable_stream_type=get_printable_stream_type (ccx_stream_type);
+		dbg_print(CCX_DMT_PMT, "%6u | %3X (%3u) | %s\n",elementary_PID,ccx_stream_type,ccx_stream_type,
 			desc[PIDs_programs[elementary_PID]->printable_stream_type]);
-		process_mpeg_descriptor (payload_start+i+5,ES_info_length);
+		process_ccx_mpeg_descriptor (payload_start+i+5,ES_info_length);
         i += ES_info_length;
 	}
-	dbg_print(DMT_PMT, "---\n");
+	dbg_print(CCX_DMT_PMT, "---\n");
 	if (TS_program_number || !autoprogram)
 	{
 		if( payload.pid != pmtpid) 
@@ -647,7 +656,7 @@ int process_PMT (int pos)
 		if (program_number != TS_program_number) // Is this the PMT of the program we want?
 		{
 			// Only use PMTs with matching program number
-			dbg_print(DMT_PARSE,"Reject this PMT packet (pid: %u) program number: %u\n",
+			dbg_print(CCX_DMT_PARSE,"Reject this PMT packet (pid: %u) program number: %u\n",
 					   pmtpid, program_number);            
 			return 0;
 		}
@@ -655,25 +664,25 @@ int process_PMT (int pos)
 
     unsigned newcappid = 0;
     unsigned newcap_stream_type = 0;
-    dbg_print(DMT_VERBOSE, "\nProgram map section (PMT)\n");
+    dbg_print(CCX_DMT_VERBOSE, "\nProgram map section (PMT)\n");
 
     for( unsigned i=0; i < stream_data && (i+4)<payload_length; i+=5)
     {
-        unsigned stream_type = payload_start[i];
+        unsigned ccx_stream_type = payload_start[i];
         unsigned elementary_PID = (((payload_start[i+1] & 0x1F) << 8)
                                    | payload_start[i+2]);
         unsigned ES_info_length = (((payload_start[i+3] & 0x0F) << 8)
                                    | payload_start[i+4]);
 
-		if (cappid==0 && stream_type==datastreamtype) // Found a stream with the type the user wants
+		if (cappid==0 && ccx_stream_type==datastreamtype) // Found a stream with the type the user wants
 		{
 			forced_cappid=1;
 			cappid = newcappid = elementary_PID;
-			cap_stream_type=UNKNOWNSTREAM;
+			cap_stream_type=CCX_STREAM_TYPE_UNKNOWNSTREAM;
 		}
 
-		if ((telext_mode==TXT_AUTO_NOT_YET_FOUND || (telext_mode==TXT_IN_USE && !cappid)) // Want teletext but don't know the PID yet
-			&& stream_type == PRIVATE_MPEG2) // MPEG-2 Packetized Elementary Stream packets containing private data
+		if ((telext_mode==CCX_TXT_AUTO_NOT_YET_FOUND || (telext_mode==CCX_TXT_IN_USE && !cappid)) // Want teletext but don't know the PID yet
+			&& ccx_stream_type == CCX_STREAM_TYPE_PRIVATE_MPEG2) // MPEG-2 Packetized Elementary Stream packets containing private data
 		{
 			// descriptor_tag: 0x45 = VBI_data_descriptor, 0x46 = VBI_teletext_descriptor, 0x56 = teletext_descriptor
 			unsigned descriptor_tag = payload_start[i + 5];
@@ -683,32 +692,32 @@ int process_PMT (int pos)
 				if (!forced_cappid)
 				{
 					cappid = newcappid = elementary_PID;
-					cap_stream_type = newcap_stream_type = stream_type;
+					cap_stream_type = newcap_stream_type = ccx_stream_type;
 				}
-				telext_mode =TXT_IN_USE;						
+				telext_mode =CCX_TXT_IN_USE;						
 				mprint ("VBI/teletext stream ID %u (0x%x) for SID %u (0x%x)\n",
 					elementary_PID, elementary_PID, program_number, program_number);
 			}
 		}
-		if (telext_mode==TXT_FORBIDDEN && stream_type == PRIVATE_MPEG2) // MPEG-2 Packetized Elementary Stream packets containing private data
+		if (telext_mode==CCX_TXT_FORBIDDEN && ccx_stream_type == CCX_STREAM_TYPE_PRIVATE_MPEG2) // MPEG-2 Packetized Elementary Stream packets containing private data
 		{
 			unsigned descriptor_tag = payload_start[i + 5];
 			if (descriptor_tag == 0x45)
 			{
 				cappid = newcappid = elementary_PID;
-				cap_stream_type = newcap_stream_type = stream_type;
+				cap_stream_type = newcap_stream_type = ccx_stream_type;
 				mprint ("VBI stream ID %u (0x%x) for SID %u (0x%x) - teletext is disabled, will be processed as closed captions.\n",
 					elementary_PID, elementary_PID, program_number, program_number);
 			}
 		}
 
-		if (forced_cappid && elementary_PID==cappid && cap_stream_type==UNKNOWNSTREAM)
+		if (forced_cappid && elementary_PID==cappid && cap_stream_type==CCX_STREAM_TYPE_UNKNOWNSTREAM)
 		{
 			// We found the user selected CAPPID in PMT. We make a note of its type and don't
 			// touch anything else
-			if (stream_type>=0x80 && stream_type<=0xFF)
+			if (ccx_stream_type>=0x80 && ccx_stream_type<=0xFF)
 			{
-				if (forced_streamtype==UNKNOWNSTREAM)
+				if (forced_streamtype==CCX_STREAM_TYPE_UNKNOWNSTREAM)
 				{
 					mprint ("I can't tell the stream type of the manually selected PID.\n");
 					mprint ("Please pass -streamtype to select manually.\n");
@@ -718,22 +727,22 @@ int process_PMT (int pos)
 					cap_stream_type = newcap_stream_type = forced_streamtype;
 			}
 			else
-				cap_stream_type = newcap_stream_type = stream_type;
+				cap_stream_type = newcap_stream_type = ccx_stream_type;
 			continue;
 		}
 
-		if ((stream_type==VIDEO_H264 || stream_type==VIDEO_MPEG2) 
-			&& telext_mode != TXT_IN_USE)
+		if ((ccx_stream_type==CCX_STREAM_TYPE_VIDEO_H264 || ccx_stream_type==CCX_STREAM_TYPE_VIDEO_MPEG2) 
+			&& telext_mode != CCX_TXT_IN_USE)
 		{
 			newcappid = elementary_PID;
-			newcap_stream_type = stream_type;
+			newcap_stream_type = ccx_stream_type;
 		}
 
         // For the print command below
-        unsigned tmp_stream_type = get_printable_stream_type (stream_type);
-        dbg_print(DMT_VERBOSE, "  %s stream [0x%02x]  -  PID: %u\n",
+        unsigned tmp_stream_type = get_printable_stream_type (ccx_stream_type);
+        dbg_print(CCX_DMT_VERBOSE, "  %s stream [0x%02x]  -  PID: %u\n",
                 desc[tmp_stream_type],
-                stream_type, elementary_PID);
+                ccx_stream_type, elementary_PID);
         i += ES_info_length;
     }
     if (!newcappid && !forced_cappid)
@@ -816,7 +825,7 @@ long ts_readstream(void)
 		// Skip damaged packets, they could do more harm than good
 		if (payload.transport_error)
 		{
-			dbg_print(DMT_VERBOSE, "Packet (pid %u) skipped - transport error.\n",
+			dbg_print(CCX_DMT_VERBOSE, "Packet (pid %u) skipped - transport error.\n",
 				payload.pid);
             continue;
 		}
@@ -825,7 +834,7 @@ long ts_readstream(void)
         // packets.		
         if ( !payload.length )
         {
-			dbg_print(DMT_VERBOSE, "Packet (pid %u) skipped - no payload.\n",
+			dbg_print(CCX_DMT_VERBOSE, "Packet (pid %u) skipped - no payload.\n",
 				payload.pid);
             continue;
         }
@@ -848,9 +857,9 @@ long ts_readstream(void)
         // PID != 0 but no PMT selected yet, ignore the rest of the current
         // package and continue searching, UNLESS we are in -autoprogram, which requires us
 		// to analyze all PMTs to look for a stream with data.
-        if ( !pmtpid && telext_mode!=TXT_IN_USE && !autoprogram)
+        if ( !pmtpid && telext_mode!=CCX_TXT_IN_USE && !autoprogram)
         {
-            dbg_print(DMT_PARSE, "Packet (pid %u) skipped - no PMT pid identified yet.\n",
+            dbg_print(CCX_DMT_PARSE, "Packet (pid %u) skipped - no PMT pid identified yet.\n",
                        payload.pid);
             continue;
         }
@@ -861,7 +870,7 @@ long ts_readstream(void)
 			if (pmt_array[j].PMT_PID==payload.pid)
 			{
 				if (!PIDs_seen[payload.pid])
-					dbg_print(DMT_PAT, "This PID (%u) is a PMT for program %u.\n",payload.pid, pmt_array[j].program_number);
+					dbg_print(CCX_DMT_PAT, "This PID (%u) is a PMT for program %u.\n",payload.pid, pmt_array[j].program_number);
 				is_pmt=1;
 				break;
 			}
@@ -883,21 +892,21 @@ long ts_readstream(void)
 			case 0: // First time we see this PID
 				if (PIDs_programs[payload.pid])
 				{
-					dbg_print(DMT_PARSE, "\nNew PID found: %u (%s), belongs to program: %u\n", payload.pid, 
+					dbg_print(CCX_DMT_PARSE, "\nNew PID found: %u (%s), belongs to program: %u\n", payload.pid, 
 						desc[PIDs_programs[payload.pid]->printable_stream_type],
 						PIDs_programs[payload.pid]->program_number);
 					PIDs_seen[payload.pid]=2;
 				}
 				else
 				{
-					dbg_print(DMT_PARSE, "\nNew PID found: %u, program number still unknown\n", payload.pid);
+					dbg_print(CCX_DMT_PARSE, "\nNew PID found: %u, program number still unknown\n", payload.pid);
 					PIDs_seen[payload.pid]=1;
 				}
 				break;
 			case 1: // Saw it before but we didn't know what program it belonged to. Luckier now?
 				if (PIDs_programs[payload.pid])
 				{
-					dbg_print(DMT_PARSE, "\nProgram for PID: %u (previously unknown) is: %u (%s)\n", payload.pid, 
+					dbg_print(CCX_DMT_PARSE, "\nProgram for PID: %u (previously unknown) is: %u (%s)\n", payload.pid, 
 						PIDs_programs[payload.pid]->program_number,
 						desc[PIDs_programs[payload.pid]->printable_stream_type]
 						);
@@ -922,7 +931,7 @@ long ts_readstream(void)
         if ( !cappid )
         {
 			if (!packet_analysis_mode)
-				dbg_print(DMT_PARSE, "Packet (pid %u) skipped - no stream with captions identified yet.\n",
+				dbg_print(CCX_DMT_PARSE, "Packet (pid %u) skipped - no stream with captions identified yet.\n",
                        payload.pid);
 			else
 				look_for_caption_data ();
@@ -962,7 +971,7 @@ long ts_readstream(void)
 			// Discard packets when no pesstart was found.
             if ( !saw_pesstart )
             {
-                dbg_print(DMT_PARSE, "Packet (pid %u) skipped - Did not see pesstart.\n",
+                dbg_print(CCX_DMT_PARSE, "Packet (pid %u) skipped - Did not see pesstart.\n",
                            payload.pid);
                 continue;
             }
@@ -970,7 +979,7 @@ long ts_readstream(void)
             // If the buffer is empty we just started this function
             if (payload.pesstart && capbuflen > 0)
             {
-                dbg_print(DMT_PARSE, "\nPES finished (%ld bytes/%ld PES packets/%ld total packets)\n",
+                dbg_print(CCX_DMT_PARSE, "\nPES finished (%ld bytes/%ld PES packets/%ld total packets)\n",
                            capbuflen, pespcount, pcount);
 			
                 // Keep the data in capbuf to be worked on
@@ -1030,33 +1039,33 @@ LLONG ts_getmoredata(void)
 		// cap_stream_type wasn't set) but the user told us what kind
 		// of stream to look for, so we move forward anyway. This
 		// happens with MPEG-2 sources from ZeeVee HDbridge.
-		if (cap_stream_type == UNKNOWNSTREAM && forced_streamtype != UNKNOWNSTREAM)
+		if (cap_stream_type == CCX_STREAM_TYPE_UNKNOWNSTREAM && forced_streamtype != CCX_STREAM_TYPE_UNKNOWNSTREAM)
 		{
 			cap_stream_type = forced_streamtype;
 		}
 
         // Separate MPEG-2 and H.264 video streams
-        if( cap_stream_type == VIDEO_MPEG2)
+        if( cap_stream_type == CCX_STREAM_TYPE_VIDEO_MPEG2)
         {
             bufferdatatype = PES;
             tstr = "MPG";
         }
-        else if( cap_stream_type == VIDEO_H264 )
+        else if( cap_stream_type == CCX_STREAM_TYPE_VIDEO_H264 )
         {
             bufferdatatype = H264;
             tstr = "H.264";
         }
-		else if ( cap_stream_type == UNKNOWNSTREAM && hauppauge_mode)
+		else if ( cap_stream_type == CCX_STREAM_TYPE_UNKNOWNSTREAM && hauppauge_mode)
 		{
             bufferdatatype = HAUPPAGE;
             tstr = "Hauppage";
 		}
-		else if ( cap_stream_type == PRIVATE_MPEG2 && telext_mode==TXT_IN_USE)
+		else if ( cap_stream_type == CCX_STREAM_TYPE_PRIVATE_MPEG2 && telext_mode==CCX_TXT_IN_USE)
 		{
             bufferdatatype = TELETEXT;
             tstr = "Teletext";
 		}
-		else if ( cap_stream_type == PRIVATE_MPEG2 && telext_mode==TXT_FORBIDDEN)
+		else if ( cap_stream_type == CCX_STREAM_TYPE_PRIVATE_MPEG2 && telext_mode==CCX_TXT_FORBIDDEN)
 		{
             bufferdatatype = PRIVATE_MPEG2_CC;
             tstr = "CC in private MPEG packet";
@@ -1075,12 +1084,12 @@ LLONG ts_getmoredata(void)
         {
             // ??? Shouldn't happen. Complain and try again.
             mprint("Missing PES header!\n");
-            dump(DMT_GENERIC_NOTICES, capbuf,256, 0, 0);
+            dump(CCX_DMT_GENERIC_NOTICES, capbuf,256, 0, 0);
             continue;
         }
         unsigned stream_id = capbuf[3];
 
-		if (telext_mode == TXT_IN_USE)
+		if (telext_mode == CCX_TXT_IN_USE)
 		{
 			if (cappid==0)
 			{ // If here, the user forced teletext mode but didn't supply a PID, and we haven't found it yet.
@@ -1093,7 +1102,7 @@ LLONG ts_getmoredata(void)
 		}
 		if (bufferdatatype == PRIVATE_MPEG2_CC)
 		{
-			dump (DMT_GENERIC_NOTICES, capbuf, capbuflen,0, 1);
+			dump (CCX_DMT_GENERIC_NOTICES, capbuf, capbuflen,0, 1);
 			// Bogus data, so we return something
 				buffer[inbuf++]=0xFA; 
 				buffer[inbuf++]=0x80;
@@ -1155,7 +1164,7 @@ LLONG ts_getmoredata(void)
             continue;
         }
 
-        dbg_print(DMT_VERBOSE, "TS payload start video PES id: %d  len: %ld\n",
+        dbg_print(CCX_DMT_VERBOSE, "TS payload start video PES id: %d  len: %ld\n",
                stream_id, capbuflen);
 
         int pesheaderlen;
@@ -1172,12 +1181,12 @@ LLONG ts_getmoredata(void)
 
         // If the package length is unknown vpesdatalen is zero.
         // If we know he package length, use it to quit
-        dbg_print(DMT_VERBOSE, "Read PES-%s (databuffer %ld/PES data %d) ",
+        dbg_print(CCX_DMT_VERBOSE, "Read PES-%s (databuffer %ld/PES data %d) ",
                tstr, databuflen, vpesdatalen);
         // We got the whole PES in buffer
         if( vpesdatalen && (databuflen >= vpesdatalen) )
-            dbg_print(DMT_VERBOSE, " - complete");
-        dbg_print(DMT_VERBOSE, "\n");
+            dbg_print(CCX_DMT_VERBOSE, " - complete");
+        dbg_print(CCX_DMT_VERBOSE, "\n");
         
 
         if (databuflen > BUFSIZE - inbuf)

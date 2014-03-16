@@ -104,7 +104,7 @@ int rawmode = 0; // Broadcast or DVD
 // See -d from http://www.geocities.com/mcpoodle43/SCC_TOOLS/DOCS/SCC_TOOLS.HTML#CCExtract
 int extract = 1; // Extract 1st, 2nd or both fields
 int cc_channel = 1; // Channel we want to dump in srt mode
-LLONG debug_mask=DMT_GENERIC_NOTICES; // dbg_print will use this mask to print or ignore different types
+LLONG debug_mask=CCX_DMT_GENERIC_NOTICES; // dbg_print will use this mask to print or ignore different types
 LLONG debug_mask_on_debug=0; // If we're using temp_debug to enable/disable debug "live", this is the mask when temp_debug=1
 int investigate_packets = 0; // Look for captions in all packets when everything else fails
 int messages_target=1; // 0 = nowhere (quiet), 1=stdout, 2=stderr
@@ -127,7 +127,7 @@ int line_terminator_lf=0; // 0 = CRLF, 1=LF
 int noautotimeref=0; // Do NOT set time automatically?
 int autodash=0; // Add dashes (-) before each speaker automatically?
 
-datasource input_source=DS_FILE; // Files, stdin or network
+ccx_datasource input_source=CCX_DS_FILE; // Files, stdin or network
 const char *extension; // Output extension
 int current_file=-1; // If current_file!=1, we are processing *inputfile[current_file]
 int direct_rollup=0; // Write roll-up captions directly instead of line by line?
@@ -171,7 +171,7 @@ char *end_credits_text=NULL;
 unsigned hauppauge_warning_shown=0; // Did we detect a possible Hauppauge capture and told the user already?
 unsigned hauppauge_mode=0; // If 1, use PID=1003, process specially and so on
 unsigned teletext_warning_shown=0; // Did we detect a possible PAL (with teletext subs) and told the user already?
-unsigned telext_mode=TXT_AUTO_NOT_YET_FOUND; // 0=Disabled, 1 = Not found, 2=Found
+unsigned telext_mode=CCX_TXT_AUTO_NOT_YET_FOUND; // 0=Disabled, 1 = Not found, 2=Found
 
 /* Levenshtein's parameters, for string comparison */
 int levdistmincnt=2, levdistmaxpct=10; // Means 2 fails or less is "the same", 10% or less is also "the same"	
@@ -204,7 +204,7 @@ LLONG process_raw_with_field (void);
 
 int main(int argc, char *argv[])
 {
-	char *c;
+    char *c;
 
     // Initialize some constants
     init_ts_constants();
@@ -232,7 +232,7 @@ int main(int argc, char *argv[])
 	memset (&cea708services[0],0,63*sizeof (int));
     parse_parameters (argc,argv);
 
-	if (num_input_files==0 && input_source==DS_FILE)
+	if (num_input_files==0 && input_source==CCX_DS_FILE)
     {
         usage ();
         fatal (EXIT_NO_INPUT_FILES, "(This help screen was shown because there were no input files)\n");        
@@ -241,11 +241,11 @@ int main(int argc, char *argv[])
     {
         fatal(EXIT_TOO_MANY_INPUT_FILES, "Live stream mode accepts only one input file.\n");        
     }
-    if (num_input_files && input_source==DS_NETWORK)
+    if (num_input_files && input_source==CCX_DS_NETWORK)
     {
         fatal(EXIT_TOO_MANY_INPUT_FILES, "UDP mode is not compatible with input files.\n");        
     }
-	if (input_source==DS_NETWORK)
+	if (input_source==CCX_DS_NETWORK)
 	{
 		buffer_input=1; // Mandatory, because each datagram must be read complete.
 	}
@@ -319,27 +319,27 @@ int main(int argc, char *argv[])
 
 	switch (input_source)
 	{
-		case DS_FILE:
+		case CCX_DS_FILE:
 			basefilename = (char *) malloc (strlen (inputfile[0])+1);
 			break;
-		case DS_STDIN:
-			basefilename = (char *) malloc (strlen (basefilename_for_stdin));
+		case CCX_DS_STDIN:
+			basefilename = (char *) malloc (strlen (basefilename_for_stdin)+1);
 			break;
-		case DS_NETWORK:
-			basefilename = (char *) malloc (strlen (basefilename_for_network));
+		case CCX_DS_NETWORK:
+			basefilename = (char *) malloc (strlen (basefilename_for_network)+1);
 			break;
 	}		
 	if (basefilename == NULL)
 		fatal (EXIT_NOT_ENOUGH_MEMORY, "Not enough memory\n");        
 	switch (input_source)
 	{
-		case DS_FILE:
+		case CCX_DS_FILE:
 			strcpy (basefilename, inputfile[0]);
 			break;
-		case DS_STDIN:
+		case CCX_DS_STDIN:
 			strcpy (basefilename, basefilename_for_stdin);
 			break;
-		case DS_NETWORK:
+		case CCX_DS_NETWORK:
 			strcpy (basefilename, basefilename_for_network);
 			break;
 	}		
@@ -486,7 +486,7 @@ int main(int argc, char *argv[])
 			mprint ("Warning: -xds ignored, XDS can only be exported to transcripts at this time.\n");
 	}
 
-	if (telext_mode == TXT_IN_USE) // Here, it would mean it was forced by user
+	if (telext_mode == CCX_TXT_IN_USE) // Here, it would mean it was forced by user
 		telxcc_init();
 
     fh_out_elementarystream = NULL;
@@ -641,26 +641,26 @@ int main(int argc, char *argv[])
         }
 
         mprint("\n");
-        dbg_print(DMT_608, "\nTime stamps after last caption block was written:\n");
-        dbg_print(DMT_608, "Last time stamps:  PTS: %s (%+2dF)        ",
+        dbg_print(CCX_DMT_608, "\nTime stamps after last caption block was written:\n");
+        dbg_print(CCX_DMT_608, "Last time stamps:  PTS: %s (%+2dF)        ",
                print_mstime( LLONG(sync_pts/(MPEG_CLOCK_FREQ/1000)
                                    +frames_since_ref_time*1000.0/current_fps) ),
                frames_since_ref_time);
-        dbg_print(DMT_608, "GOP: %s      \n", print_mstime(gop_time.ms) );
+        dbg_print(CCX_DMT_608, "GOP: %s      \n", print_mstime(gop_time.ms) );
 
         // Blocks since last PTS/GOP time stamp.
-        dbg_print(DMT_608, "Calc. difference:  PTS: %s (%+3lldms incl.)  ",
+        dbg_print(CCX_DMT_608, "Calc. difference:  PTS: %s (%+3lldms incl.)  ",
             print_mstime( LLONG((sync_pts-min_pts)/(MPEG_CLOCK_FREQ/1000)
             + fts_offset + frames_since_ref_time*1000.0/current_fps)),
             fts_offset + LLONG(frames_since_ref_time*1000.0/current_fps) );
-        dbg_print(DMT_608, "GOP: %s (%+3dms incl.)\n",
+        dbg_print(CCX_DMT_608, "GOP: %s (%+3dms incl.)\n",
             print_mstime((LLONG)(gop_time.ms
             -first_gop_time.ms
             +get_fts_max()-fts_at_gop_start)),
             (int)(get_fts_max()-fts_at_gop_start));
         // When padding is active the CC block time should be within
         // 1000/29.97 us of the differences.
-        dbg_print(DMT_608, "Max. FTS:       %s  (without caption blocks since then)\n",
+        dbg_print(CCX_DMT_608, "Max. FTS:       %s  (without caption blocks since then)\n",
             print_mstime(get_fts_max()));
 
         if (stat_hdtv)
@@ -808,8 +808,8 @@ int main(int argc, char *argv[])
         mprint ("Performance (real length/process time) = %u.%02u\n", 
             s1, s2);
     }
-    dbg_print(DMT_708, "The 708 decoder was reset [%d] times.\n",resets_708);
-	if (telext_mode == TXT_IN_USE)
+    dbg_print(CCX_DMT_708, "The 708 decoder was reset [%d] times.\n",resets_708);
+	if (telext_mode == CCX_TXT_IN_USE)
 		mprint ( "Teletext decoder: %"PRIu32" packets processed, %"PRIu32" SRT frames written.\n", tlt_packet_counter, tlt_frames_produced);
 
     if (processed_enough)

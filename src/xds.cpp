@@ -297,7 +297,7 @@ void process_xds_bytes (const unsigned char hi, int lo)
 	{
 		int xds_class=(hi-1)/2; // Start codes 1 and 2 are "class type" 0, 3-4 are 2, and so on.
 		is_new=hi%2; // Start codes are even
-		dbg_print(DMT_XDS, "XDS Start: %u.%u  Is new: %d  | Class: %d (%s), Used buffers: %d\n",hi,lo, is_new,xds_class, XDSclasses[xds_class], how_many_used());
+		dbg_print(CCX_DMT_XDS, "XDS Start: %u.%u  Is new: %d  | Class: %d (%s), Used buffers: %d\n",hi,lo, is_new,xds_class, XDSclasses[xds_class], how_many_used());
 		int first_free_buf=-1;
 		int matching_buf=-1;
 		for (int i=0;i<NUM_XDS_BUFFERS;i++)
@@ -344,7 +344,7 @@ void process_xds_bytes (const unsigned char hi, int lo)
 	else
 	{
 		// Informational: 00, or 0x20-0x7F, so 01-0x1f forbidden
-		dbg_print(DMT_XDS, "XDS: %02X.%02X (%c, %c)\n",hi,lo,hi,lo);
+		dbg_print(CCX_DMT_XDS, "XDS: %02X.%02X (%c, %c)\n",hi,lo,hi,lo);
 		if ((hi>0 && hi<=0x1f) || (lo>0 && lo<=0x1f))
 		{
 			mprint ("\rNote: Illegal XDS data");
@@ -408,9 +408,9 @@ void xds_do_copy_generation_management_system (unsigned c1, unsigned c2)
 		mprint ("\rXDS: %s\n",aps);
 		mprint ("\rXDS: %s\n",rcd);
 	}
-	dbg_print(DMT_XDS, "\rXDS: %s\n",copy_permited);
-	dbg_print(DMT_XDS, "\rXDS: %s\n",aps);
-	dbg_print(DMT_XDS, "\rXDS: %s\n",rcd);
+	dbg_print(CCX_DMT_XDS, "\rXDS: %s\n",copy_permited);
+	dbg_print(CCX_DMT_XDS, "\rXDS: %s\n",aps);
+	dbg_print(CCX_DMT_XDS, "\rXDS: %s\n",rcd);
 }
 
 void xds_do_content_advisory (unsigned c1, unsigned c2)
@@ -496,8 +496,8 @@ void xds_do_content_advisory (unsigned c1, unsigned c2)
 			mprint ("\rXDS: %s\n  ",age);
 			mprint ("\rXDS: %s\n  ",content);
 		}
-		dbg_print(DMT_XDS, "\rXDS: %s\n",age);
-		dbg_print(DMT_XDS, "\rXDS: %s\n",content);
+		dbg_print(CCX_DMT_XDS, "\rXDS: %s\n",age);
+		dbg_print(CCX_DMT_XDS, "\rXDS: %s\n",content);
 	}
 	if (!a0 || // MPA
 			(a0 && a1 && !Da2 && !La3) // Canadian English Language Rating
@@ -506,7 +506,7 @@ void xds_do_content_advisory (unsigned c1, unsigned c2)
 		xdsprint(rating);
 		if (changed)				
 			mprint ("\rXDS: %s\n  ",rating);
-		dbg_print(DMT_XDS, "\rXDS: %s\n",rating);
+		dbg_print(CCX_DMT_XDS, "\rXDS: %s\n",rating);
 	}
 
 	if (changed && !supported)							
@@ -543,7 +543,7 @@ int xds_do_current_and_future ()
 					current_xds_month=month;
 				}
 
-				dbg_print(DMT_XDS, "PIN (Start Time): %s  %02d-%02d %02d:%02d\n",
+				dbg_print(CCX_DMT_XDS, "PIN (Start Time): %s  %02d-%02d %02d:%02d\n",
 						(cur_xds_packet_class==XDS_CLASS_CURRENT?"Current":"Future"),
 						date,month,hour,min);
 				xdsprint ( "PIN (Start Time): %s  %02d-%02d %02d:%02d\n",
@@ -570,7 +570,7 @@ int xds_do_current_and_future ()
 				if (!xds_program_length_shown)				
 					mprint ("\rXDS: Program length (HH:MM): %02d:%02d  ",hour,min);
 				else
-					dbg_print(DMT_XDS, "\rXDS: Program length (HH:MM): %02d:%02d  ",hour,min);
+					dbg_print(CCX_DMT_XDS, "\rXDS: Program length (HH:MM): %02d:%02d  ",hour,min);
 
 				xdsprint("Program length (HH:MM): %02d:%02d  ",hour,min);
 
@@ -581,7 +581,7 @@ int xds_do_current_and_future ()
 					if (!xds_program_length_shown)
 						mprint ("Elapsed (HH:MM): %02d:%02d",el_hour,el_min);
 					else
-						dbg_print(DMT_XDS, "Elapsed (HH:MM): %02d:%02d",el_hour,el_min);
+						dbg_print(CCX_DMT_XDS, "Elapsed (HH:MM): %02d:%02d",el_hour,el_min);
 					xdsprint("Elapsed (HH:MM): %02d:%02d",el_hour,el_min);
 
 				}
@@ -589,13 +589,13 @@ int xds_do_current_and_future ()
 				{
 					int el_sec=cur_xds_payload[6] & 0x3f; // 6 bits							
 					if (!xds_program_length_shown)
-						dbg_print(DMT_XDS, ":%02d",el_sec);
+						dbg_print(CCX_DMT_XDS, ":%02d",el_sec);
 					xdsprint("Elapsed (SS) :%02d",el_sec);
 				}
 				if (!xds_program_length_shown)
 					printf ("\n");
 				else
-					dbg_print(DMT_XDS, "\n");
+					dbg_print(CCX_DMT_XDS, "\n");
 				xds_program_length_shown=1;
 			}
 			break;
@@ -607,7 +607,7 @@ int xds_do_current_and_future ()
 				for (i=2;i<cur_xds_payload_length-1;i++)
 					xds_program_name[i-2]=cur_xds_payload[i];
 				xds_program_name[i-2]=0;
-				dbg_print(DMT_XDS, "\rXDS Program name: %s\n",xds_program_name);
+				dbg_print(CCX_DMT_XDS, "\rXDS Program name: %s\n",xds_program_name);
 				xdsprint("program name: %s",xds_program_name);
 				if (cur_xds_packet_class==XDS_CLASS_CURRENT && 
 					strcmp (xds_program_name, current_xds_program_name)) // Change of program
@@ -636,7 +636,7 @@ int xds_do_current_and_future ()
 					}
 				}
 			}
-			if (!(debug_mask & DMT_XDS) && current_program_type_reported && export_xds==0)
+			if (!(debug_mask & CCX_DMT_XDS) && current_program_type_reported && export_xds==0)
 				break;
 			memcpy (current_xds_program_type,cur_xds_payload,cur_xds_payload_length);
 			current_xds_program_type[cur_xds_payload_length]=0;
@@ -713,7 +713,7 @@ int xds_do_current_and_future ()
 					}
 					else
 					{					
-						dbg_print(DMT_XDS, "\rXDS description line %d: %s\n",line_num,xds_desc);
+						dbg_print(CCX_DMT_XDS, "\rXDS description line %d: %s\n",line_num,xds_desc);
 					}
 					xdsprint("XDS description line %d: %s",line_num,xds_desc);
 					activity_xds_program_description (line_num, xds_desc);
@@ -736,7 +736,7 @@ int xds_do_channel ()
 			for (i=2;i<cur_xds_payload_length-1;i++)
 				xds_network_name[i-2]=cur_xds_payload[i];
 			xds_network_name[i-2]=0;
-			dbg_print(DMT_XDS, "XDS Network name: %s\n",xds_network_name);
+			dbg_print(CCX_DMT_XDS, "XDS Network name: %s\n",xds_network_name);
 			xdsprint ("Network: %s",xds_network_name);
 			if (strcmp (xds_network_name, current_xds_network_name)) // Change of station
 			{
@@ -756,7 +756,7 @@ int xds_do_channel ()
 						xds_call_letters[i-2]=cur_xds_payload[i];
 				}
 				xds_call_letters[i-2]=0;				
-				dbg_print(DMT_XDS, "XDS Network call letters: %s\n",xds_call_letters);
+				dbg_print(CCX_DMT_XDS, "XDS Network call letters: %s\n",xds_call_letters);
 				xdsprint ("Call Letters: %s",xds_call_letters);
 				if (strcmp (xds_call_letters, current_xds_call_letters)) // Change of station
 				{
@@ -815,7 +815,7 @@ int xds_do_misc ()
 			int reset_seconds = (cur_xds_payload[5] & 0x20); 
 			int day_of_week = cur_xds_payload[6] & 0x7;
 			int year = (cur_xds_payload[7] & 0x3f) + 1990;
-			dbg_print(DMT_XDS, "Time of day: (YYYY/MM/DD) %04d/%02d/%02d (HH:SS) %02d:%02d DoW: %d  Reset seconds: %d\n",							
+			dbg_print(CCX_DMT_XDS, "Time of day: (YYYY/MM/DD) %04d/%02d/%02d (HH:SS) %02d:%02d DoW: %d  Reset seconds: %d\n",							
 					year,month,date,hour,min, day_of_week, reset_seconds);				
 			break;
 		}
@@ -827,7 +827,7 @@ int xds_do_misc ()
 			int b6 = (cur_xds_payload[2] & 0x40) >>6; // Bit 6 should always be 1
 			int dst = (cur_xds_payload[2] & 0x20) >>5; // Daylight Saving Time
 			int hour = cur_xds_payload[2] & 0x1f; // 5 bits
-			dbg_print(DMT_XDS, "Local Time Zone: %02d DST: %d\n",
+			dbg_print(CCX_DMT_XDS, "Local Time Zone: %02d DST: %d\n",
 					hour, dst);	
 			break;
 		}
@@ -855,19 +855,19 @@ void do_end_of_xds (unsigned char expected_checksum)
 		cs=cs+cur_xds_payload[i];
 		cs=cs & 0x7f; // Keep 7 bits only
 		int c=cur_xds_payload[i]&0x7F;
-		dbg_print(DMT_XDS, "%02X - %c cs: %02X\n",
+		dbg_print(CCX_DMT_XDS, "%02X - %c cs: %02X\n",
 			c,(c>=0x20)?c:'?', cs);
 	}
 	cs=(128-cs) & 0x7F; // Convert to 2's complement & discard high-order bit
 
-	dbg_print(DMT_XDS, "End of XDS. Class=%d (%s), size=%d  Checksum OK: %d   Used buffers: %d\n",
+	dbg_print(CCX_DMT_XDS, "End of XDS. Class=%d (%s), size=%d  Checksum OK: %d   Used buffers: %d\n",
 			cur_xds_packet_class,XDSclasses[cur_xds_packet_class],
 			cur_xds_payload_length,
 			cs==expected_checksum, how_many_used());	
 
 	if (cs!=expected_checksum || cur_xds_payload_length<3)
 	{
-		dbg_print(DMT_XDS, "Expected checksum: %02X  Calculated: %02X\n", expected_checksum, cs);
+		dbg_print(CCX_DMT_XDS, "Expected checksum: %02X  Calculated: %02X\n", expected_checksum, cs);
 		clear_xds_buffer (cur_xds_buffer_idx); 
 		return; // Bad packets ignored as per specs
 	}
@@ -877,7 +877,7 @@ void do_end_of_xds (unsigned char expected_checksum)
 	switch (cur_xds_packet_class)
 	{
 		case XDS_CLASS_FUTURE: // Info on future program
-			if (!(debug_mask & DMT_XDS)) // Don't bother processing something we don't need
+			if (!(debug_mask & CCX_DMT_XDS)) // Don't bother processing something we don't need
 			{
 				was_proc=1;
 				break; 

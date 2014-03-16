@@ -4,6 +4,7 @@ relevant events. */
 #include "ccextractor.h"
 
 static int credits_shown=0;
+unsigned long net_activity_gui=0;
 
 /* Print current progress. For percentaje, -1 -> streaming mode */
 void activity_progress (int percentaje, int cur_min, int cur_sec)
@@ -40,7 +41,6 @@ void activity_xds_program_identification_number (unsigned minutes, unsigned hour
         fflush (stderr); 
     }
 }
-
 
 void activity_xds_network_call_letters (const char *program_name)
 {
@@ -123,6 +123,16 @@ void activity_report_version (void)
         fflush (stderr);
     }
 }
+
+void activity_report_data_read (void)
+{
+    if (gui_mode_reports)
+    {
+        fprintf (stderr, "###DATAREAD#%lu\n",net_activity_gui/1000);
+        fflush (stderr);
+    }
+}
+
 
 void activity_header (void)
 {

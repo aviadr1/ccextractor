@@ -86,7 +86,7 @@ typedef struct {
 } pat_t;
 
 typedef struct {
-	uint8_t stream_type;
+	uint8_t ccx_stream_type;
 	uint16_t elementary_pid;
 	uint16_t es_info_length;
 } pmt_program_descriptor_t;
@@ -143,7 +143,7 @@ typedef struct {
 } teletext_page_t;
 
 // application config global variable
-struct s_teletext_config tlt_config = { NO, 0, 0, 0, NO, NO, 0 };
+struct ccx_s_teletext_config tlt_config = { NO, 0, 0, 0, NO, NO, 0 };
 
 // macro -- output only when increased verbosity was turned on
 #define VERBOSE_ONLY if (tlt_config.verbose == YES)
@@ -268,7 +268,7 @@ void page_buffer_add_char (char c)
 uint8_t unham_8_4(uint8_t a) {
 	uint8_t r = UNHAM_8_4[a];
 	if (r == 0xff) {
-		dbg_print (DMT_TELETEXT, "- Unrecoverable data error; UNHAM8/4(%02x)\n", a);
+		dbg_print (CCX_DMT_TELETEXT, "- Unrecoverable data error; UNHAM8/4(%02x)\n", a);
 	}
 	return (r & 0x0f);
 }
@@ -334,7 +334,7 @@ void ucs2_to_utf8(char *r, uint16_t ch) {
 // check parity and translate any reasonable teletext character into ucs2
 uint16_t telx_to_ucs2(uint8_t c) {
 	if (PARITY_8[c] == 0) {
-		dbg_print (DMT_TELETEXT,  "- Unrecoverable data error; PARITY(%02x)\n", c);
+		dbg_print (CCX_DMT_TELETEXT,  "- Unrecoverable data error; PARITY(%02x)\n", c);
 		return 0x20;
 	}
 
@@ -395,7 +395,7 @@ int fuzzy_memcmp (const char *c1, const char *c2, const uint64_t *ucs2_buf1, uns
 	// For the second string, only take the first chars (up to the first string length, that's upto).
 	size_t l = (size_t) levenshtein_dist (ucs2_buf1,ucs2_buf2,ucs2_buf1_len,upto); 
 	int res=(l>max);
-	dbg_print(DMT_LEVENSHTEIN, "\rLEV | %s | %s | Max: %d | Calc: %d | Match: %d\n", c1,c2,max,l,!res);
+	dbg_print(CCX_DMT_LEVENSHTEIN, "\rLEV | %s | %s | Max: %d | Calc: %d | Match: %d\n", c1,c2,max,l,!res);
 	return res;	
 }
 
@@ -432,6 +432,11 @@ void process_page(teletext_page_t *page) {
 	++tlt_frames_produced;
 	char c_tempb[256]; // For buffering
 
+	timestamp_to_srttime(page->show_timestamp, timecode_show);
+	timecode_show[12] = 0;
+	timestamp_to_srttime(page->hide_timestamp, timecode_hide);
+	timecode_hide[12] = 0; 
+
 	// process data
 	for (uint8_t row = 1; row < 25; row++) {
 		// anchors for string trimming purpose
@@ -464,9 +469,25 @@ void process_page(teletext_page_t *page) {
 		uint8_t foreground_color = 0x7;
 		uint8_t font_tag_opened = NO;
 
-		if (!time_reported && gui_mode_reports)
-			fprintf (stderr, "###SUBTITLE###");					
-
+		if (gui_mode_reports)
+		{
+			fprintf (stderr, "###SUBTITLE#");
+			if (!time_reported)
+			{
+				char timecode_show_mmss[6], timecode_hide_mmss[6];
+				memcpy (timecode_show_mmss, timecode_show+3, 5);
+				memcpy (timecode_hide_mmss, timecode_hide+3, 5);
+				timecode_show_mmss[5]=0; 
+				timecode_hide_mmss[5]=0;
+				// Note, only MM:SS here as we need to save space in the preview window
+				fprintf (stderr, "%s#%s#",
+					timecode_show_mmss, timecode_hide_mmss);
+				time_reported=1;
+			}
+			else
+				fprintf (stderr, "##");					
+		}
+			
 		for (uint8_t col = 0; col <= col_stop; col++) {
 			// v is just a shortcut
 			uint16_t v = page->text[row][col];
@@ -531,8 +552,8 @@ void process_page(teletext_page_t *page) {
 				if (v >= 0x20) {					
 					//if (wbout1.fh!=-1) fdprintf(wbout1.fh, "%s", u);
 					page_buffer_add_string (u);
-					if (gui_mode_reports && u[1]==0) // For now we just handle the easy stuff
-						fprintf (stderr,"%c",u[0]);
+					if (gui_mode_reports) // For now we just handle the easy stuff
+						fprintf (stderr,"%s",u);
 				}
 			}
 		}
@@ -547,10 +568,10 @@ void process_page(teletext_page_t *page) {
 		page_buffer_add_string ((write_format == OF_TRANSCRIPT) ? " " : "\r\n");
 		if (gui_mode_reports)
 		{
-			fprintf (stderr,"\n");			
-			time_reported=0;
+			fprintf (stderr,"\n");						
 		}
 	}
+	time_reported=0;
 	
 	switch (write_format)
 	{
@@ -591,29 +612,12 @@ void process_page(teletext_page_t *page) {
 			}
 			break;
 		default: // Yes, this means everything else is .srt for now
-			timestamp_to_srttime(page->show_timestamp, timecode_show);
-			timecode_show[12] = 0;
-			timestamp_to_srttime(page->hide_timestamp, timecode_hide);
-			timecode_hide[12] = 0; 
 			page_buffer_add_string ("\r\n");
 			if (wbout1.fh!=-1) fdprintf(wbout1.fh,"%"PRIu32"\r\n%s --> %s\r\n", tlt_frames_produced, timecode_show, timecode_hide);
 			if (wbout1.fh!=-1) fdprintf(wbout1.fh, "%s",page_buffer_cur);
 	}
 
 	// Also update GUI...
-	if (gui_mode_reports)
-	{
-		fprintf (stderr, "###SUBTITLE#");
-		char timecode_show_mmss[6], timecode_hide_mmss[6];
-		memcpy (timecode_show_mmss, timecode_show+3, 5);
-		memcpy (timecode_hide_mmss, timecode_hide+3, 5);
-		timecode_show_mmss[5]=0; 
-		timecode_hide_mmss[5]=0;
-		// Note, only MM:SS here as we need to save space in the preview window
-		fprintf (stderr, "%s#%s#",
-			timecode_show_mmss, timecode_hide_mmss);
-		time_reported=1;
-	}
 
 	page_buffer_cur_used=0;
 	if (page_buffer_cur)
@@ -729,7 +733,7 @@ void process_telx_packet(data_unit_t data_unit_id, teletext_packet_payload_t *pa
 		for (uint8_t j = 0; j < 13; j++) {
 			// invalid data (HAM24/18 uncorrectable error detected), skip group
 			if (triplets[j] == 0xffffffff) {
-				dbg_print (DMT_TELETEXT, "- Unrecoverable data error; UNHAM24/18()=%04x\n", triplets[j]);
+				dbg_print (CCX_DMT_TELETEXT, "- Unrecoverable data error; UNHAM24/18()=%04x\n", triplets[j]);
 				continue;
 			}
 
@@ -778,7 +782,7 @@ void process_telx_packet(data_unit_t data_unit_id, teletext_packet_payload_t *pa
 
 			if (triplet0 == 0xffffffff) {
 				// invalid data (HAM24/18 uncorrectable error detected), skip group
-				dbg_print (DMT_TELETEXT, "! Unrecoverable data error; UNHAM24/18()=%04x\n", triplet0);
+				dbg_print (CCX_DMT_TELETEXT, "! Unrecoverable data error; UNHAM24/18()=%04x\n", triplet0);
 			}
 			else {
 				// ETS 300 706, chapter 9.4.2: Packet X/28/0 Format 1 only
@@ -800,7 +804,7 @@ void process_telx_packet(data_unit_t data_unit_id, teletext_packet_payload_t *pa
 
 			if (triplet0 == 0xffffffff) {
 				// invalid data (HAM24/18 uncorrectable error detected), skip group
-				dbg_print (DMT_TELETEXT, "! Unrecoverable data error; UNHAM24/18()=%04x\n", triplet0);
+				dbg_print (CCX_DMT_TELETEXT, "! Unrecoverable data error; UNHAM24/18()=%04x\n", triplet0);
 			}
 			else {
 				// ETS 300 706, table 11: Coding of Packet M/29/0
@@ -855,7 +859,7 @@ void process_telx_packet(data_unit_t data_unit_id, teletext_packet_payload_t *pa
 				// ctime output itself is \n-ended
 				mprint ("- Universal Time Co-ordinated = %s", ctime(&t0));
 
-				dbg_print (DMT_TELETEXT, "- Transmission mode = %s\n", (transmission_mode == TRANSMISSION_MODE_SERIAL ? "serial" : "parallel"));
+				dbg_print (CCX_DMT_TELETEXT, "- Transmission mode = %s\n", (transmission_mode == TRANSMISSION_MODE_SERIAL ? "serial" : "parallel"));
 
 				if (write_format == OF_TRANSCRIPT && date_format==ODF_DATE && !noautotimeref) {
                     mprint ("- Broadcast Service Data Packet received, resetting UTC referential value to %s", ctime(&t0));
@@ -906,10 +910,10 @@ void tlt_process_pes_packet(uint8_t *buffer, uint16_t size) {
 	if (using_pts == UNDEF) {
 		if ((optional_pes_header_included == YES) && ((buffer[7] & 0x80) > 0)) {
 			using_pts = YES;
-			dbg_print (DMT_TELETEXT, "- PID 0xbd PTS available\n");
+			dbg_print (CCX_DMT_TELETEXT, "- PID 0xbd PTS available\n");
 		} else {
 			using_pts = NO;
-			dbg_print (DMT_TELETEXT, "- PID 0xbd PTS unavailable, using TS PCR\n");
+			dbg_print (CCX_DMT_TELETEXT, "- PID 0xbd PTS unavailable, using TS PCR\n");
 		}
 	}
 
@@ -1035,13 +1039,13 @@ if (pmt.pointer_field > 0) {
 			uint16_t i = 13 + pmt.program_info_length;
 			while ((i < 13 + (pmt.program_info_length + pmt.section_length - 4 - 9)) && (i < size)) {
 				pmt_program_descriptor_t desc = { 0 };
-				desc.stream_type = buffer[i];
+				desc.ccx_stream_type = buffer[i];
 				desc.elementary_pid = ((buffer[i + 1] & 0x1f) << 8) | buffer[i + 2];
 				desc.es_info_length = ((buffer[i + 3] & 0x03) << 8) | buffer[i + 4];
 
 				uint8_t descriptor_tag = buffer[i + 5];
  				// descriptor_tag: 0x45 = VBI_data_descriptor, 0x46 = VBI_teletext_descriptor, 0x56 = teletext_descriptor
-				if ((desc.stream_type == 0x06) && ((descriptor_tag == 0x45) || (descriptor_tag == 0x46) || (descriptor_tag == 0x56))) {
+				if ((desc.ccx_stream_type == 0x06) && ((descriptor_tag == 0x45) || (descriptor_tag == 0x46) || (descriptor_tag == 0x56))) {
 					if (in_array(pmt_ttxt_map, pmt_ttxt_map_count, desc.elementary_pid) == NO) {
 						if (pmt_ttxt_map_count < TS_PMT_TTXT_MAP_SIZE) {
 							pmt_ttxt_map[pmt_ttxt_map_count++] = desc.elementary_pid;
@@ -1175,7 +1179,7 @@ int main_telxcc (int argc, char *argv[]) {
 
 		// uncorrectable error?
 		if (header.transport_error > 0) {
-			dbg_print (DMT_TELETEXT, "- Uncorrectable TS packet error (received CC %1x)\n", header.continuity_counter);
+			dbg_print (CCX_DMT_TELETEXT, "- Uncorrectable TS packet error (received CC %1x)\n", header.continuity_counter);
 			continue;
 		}
 
@@ -1227,7 +1231,7 @@ int main_telxcc (int argc, char *argv[]) {
 				if (af_discontinuity == 0) {
 					continuity_counter = (continuity_counter + 1) % 16;
 					if (header.continuity_counter != continuity_counter) {
-						dbg_print (DMT_TELETEXT, "- Missing TS packet, flushing pes_buffer (expected CC %1x, received CC %1x, TS discontinuity %s, TS priority %s)\n",
+						dbg_print (CCX_DMT_TELETEXT, "- Missing TS packet, flushing pes_buffer (expected CC %1x, received CC %1x, TS discontinuity %s, TS priority %s)\n",
 							continuity_counter, header.continuity_counter, (af_discontinuity ? "YES" : "NO"), (header.transport_priority ? "YES" : "NO"));
 						payload_counter = 0;
 						continuity_counter = 255;
@@ -1251,15 +1255,15 @@ int main_telxcc (int argc, char *argv[]) {
 				tlt_packet_counter++;
 			}
 			else 
-				dbg_print (DMT_TELETEXT, "- packet payload size exceeds payload_buffer size, probably not teletext stream\n");
+				dbg_print (CCX_DMT_TELETEXT, "- packet payload size exceeds payload_buffer size, probably not teletext stream\n");
 		}
 	}
 
 
 	VERBOSE_ONLY {
-		if (tlt_config.tid == 0) dbg_print (DMT_TELETEXT, "- No teletext PID specified, no suitable PID found in PAT/PMT tables. Please specify teletext PID via -t parameter.\n");
-		if (tlt_frames_produced == 0) dbg_print (DMT_TELETEXT, "- No frames produced. CC teletext page number was probably wrong.\n");
-		dbg_print (DMT_TELETEXT, "- There were some CC data carried via pages = ");
+		if (tlt_config.tid == 0) dbg_print (CCX_DMT_TELETEXT, "- No teletext PID specified, no suitable PID found in PAT/PMT tables. Please specify teletext PID via -t parameter.\n");
+		if (tlt_frames_produced == 0) dbg_print (CCX_DMT_TELETEXT, "- No frames produced. CC teletext page number was probably wrong.\n");
+		dbg_print (CCX_DMT_TELETEXT, "- There were some CC data carried via pages = ");
 		// We ignore i = 0xff, because 0xffs are teletext ending frames
 		for (uint16_t i = 0; i < 255; i++)
 			for (uint8_t j = 0; j < 8; j++) {

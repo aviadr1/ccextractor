@@ -1,3 +1,14 @@
+0.69
+----
+- A few patches from Christopher Small, including proper support
+  for multiple multicast clients listening on the same port.
+- GUI: Fixed teletext preview.
+- GUI: Added a small indicator of data being received when reading from
+  UDP.
+- GUI: Added UTF-8 support to preview Window (used for teletext).
+- Fixes in Makefile and build script, compilation in linux was failed
+  if another libpng was found in the system.
+
 0.68
 ----
 - A couple of shared variables between 608 decoders were causing

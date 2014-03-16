@@ -83,7 +83,7 @@ LLONG ps_getmoredata(void)
                 if( !strangeheader )
                 {
                     mprint ("\nNot a recognized header. Searching for next header.\n");
-                    dump (DMT_GENERIC_NOTICES, nextheader,6,0,0);
+                    dump (CCX_DMT_GENERIC_NOTICES, nextheader,6,0,0);
                     // Only print the message once per loop / unrecognized header
                     strangeheader = 1;
                 }
@@ -130,7 +130,7 @@ LLONG ps_getmoredata(void)
             // PACK header
             if ( nextheader[3]==0xBA) 
             {
-                dbg_print(DMT_VERBOSE, "PACK header\n");
+                dbg_print(CCX_DMT_VERBOSE, "PACK header\n");
                 buffered_read(nextheader+6,8);
                 past+=result;
                 if (result!=8) 
@@ -174,7 +174,7 @@ LLONG ps_getmoredata(void)
 
                 unsigned headerlen=nextheader[4]<<8 | nextheader[5];
 
-                dbg_print(DMT_VERBOSE, "non Video PES (type 0x%2X) - len %u\n",
+                dbg_print(CCX_DMT_VERBOSE, "non Video PES (type 0x%2X) - len %u\n",
                            nextheader[3], headerlen);
 
                 // The 15000 here is quite arbitrary, the longest packages I
@@ -207,7 +207,7 @@ LLONG ps_getmoredata(void)
                 }
 
                 vpesnum++;
-                dbg_print(DMT_VERBOSE, "PES video packet #%u\n", vpesnum);
+                dbg_print(CCX_DMT_VERBOSE, "PES video packet #%u\n", vpesnum);
 
 
                 int want = (int) ((BUFSIZE-inbuf)>peslen ? peslen : (BUFSIZE-inbuf));
@@ -242,7 +242,7 @@ LLONG ps_getmoredata(void)
     } 
     while (result!=0 && !enough && BUFSIZE!=inbuf);
 
-    dbg_print(DMT_VERBOSE, "PES data read: %d\n", payload_read);
+    dbg_print(CCX_DMT_VERBOSE, "PES data read: %d\n", payload_read);
 
     return payload_read;
 }
@@ -435,10 +435,10 @@ void raw_loop ()
     current_pts = 90; // Pick a valid PTS time
     pts_set = 1;
     set_fts(); // Now set the FTS related variables
-    dbg_print(DMT_VIDES, "PTS: %s (%8u)",
+    dbg_print(CCX_DMT_VIDES, "PTS: %s (%8u)",
                print_mstime(current_pts/(MPEG_CLOCK_FREQ/1000)),
                unsigned(current_pts));
-    dbg_print(DMT_VIDES, "  FTS: %s\n", print_mstime(get_fts()));
+    dbg_print(CCX_DMT_VIDES, "  FTS: %s\n", print_mstime(get_fts()));
 
     do
     {
@@ -455,10 +455,10 @@ void raw_loop ()
         current_pts += cb_field1*1001/30*(MPEG_CLOCK_FREQ/1000);
         set_fts(); // Now set the FTS related variables including fts_max
 
-        dbg_print(DMT_VIDES, "PTS: %s (%8u)",
+        dbg_print(CCX_DMT_VIDES, "PTS: %s (%8u)",
                print_mstime(current_pts/(MPEG_CLOCK_FREQ/1000)),
                unsigned(current_pts));
-        dbg_print(DMT_VIDES, "  FTS: %s incl. %d CB\n",
+        dbg_print(CCX_DMT_VIDES, "  FTS: %s incl. %d CB\n",
                print_mstime(get_fts()), ccblocks);
       
         if (processed<got)
@@ -639,10 +639,10 @@ void general_loop(void)
                 last_pts = current_pts;
             }
 
-            dbg_print(DMT_VIDES, "PTS: %s (%8u)",
+            dbg_print(CCX_DMT_VIDES, "PTS: %s (%8u)",
                    print_mstime(current_pts/(MPEG_CLOCK_FREQ/1000)),
                    unsigned(current_pts));
-            dbg_print(DMT_VIDES, "  FTS: %s\n", print_mstime(get_fts()));
+            dbg_print(CCX_DMT_VIDES, "  FTS: %s\n", print_mstime(get_fts()));
 
             got = process_raw();
         }
@@ -733,8 +733,8 @@ void rcwt_loop( void )
     // Expecting RCWT header
     if( !memcmp(parsebuf, "\xCC\xCC\xED", 3 ) )
     {
-		dbg_print(DMT_PARSE, "\nRCWT header\n");
-        dbg_print(DMT_PARSE, "File created by %02X version %02X%02X\nFile format revision: %02X%02X\n",
+		dbg_print(CCX_DMT_PARSE, "\nRCWT header\n");
+        dbg_print(CCX_DMT_PARSE, "File created by %02X version %02X%02X\nFile format revision: %02X%02X\n",
                parsebuf[3], parsebuf[4], parsebuf[5],
                parsebuf[6], parsebuf[7]);
         
@@ -770,7 +770,7 @@ void rcwt_loop( void )
         currfts = *((LLONG*)(parsebuf));
         cbcount = *((uint16_t*)(parsebuf+8));
 
-        dbg_print(DMT_PARSE, "RCWT data header FTS: %s  blocks: %u\n",
+        dbg_print(CCX_DMT_PARSE, "RCWT data header FTS: %s  blocks: %u\n",
                print_mstime(currfts), cbcount);
 
         if ( cbcount > 0 )
@@ -797,10 +797,10 @@ void rcwt_loop( void )
                 pts_set=1;
             set_fts(); // Now set the FTS related variables
 
-            dbg_print(DMT_VIDES, "PTS: %s (%8u)",
+            dbg_print(CCX_DMT_VIDES, "PTS: %s (%8u)",
                    print_mstime(current_pts/(MPEG_CLOCK_FREQ/1000)),
                    unsigned(current_pts));
-            dbg_print(DMT_VIDES, "  FTS: %s\n", print_mstime(get_fts()));
+            dbg_print(CCX_DMT_VIDES, "  FTS: %s\n", print_mstime(get_fts()));
 
             for (int j=0; j<cbcount*3; j=j+3)
             {
@@ -809,5 +809,5 @@ void rcwt_loop( void )
         }
     } // end while(1)
 
-    dbg_print(DMT_PARSE, "Processed %d bytes\n", bread);
+    dbg_print(CCX_DMT_PARSE, "Processed %d bytes\n", bread);
 }

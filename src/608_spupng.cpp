@@ -125,7 +125,7 @@ SpuPng::writeCCBuffer(struct eia608_screen* data, struct s_write *wb)
     LLONG ms_start = wb->data608->current_visible_start_ms + subs_delay;
     if (ms_start < 0)
     {
-        dbg_print(DMT_VERBOSE, "Negative start\n");
+        dbg_print(CCX_DMT_VERBOSE, "Negative start\n");
         return 0;
     }
 
@@ -141,7 +141,7 @@ SpuPng::writeCCBuffer(struct eia608_screen* data, struct s_write *wb)
     }
     if (empty_buf)
     {
-        dbg_print(DMT_VERBOSE, "Blank page\n");
+        dbg_print(CCX_DMT_VERBOSE, "Blank page\n");
         return 0;
     }
 
@@ -159,17 +159,17 @@ SpuPng::writeCCBuffer(struct eia608_screen* data, struct s_write *wb)
     fclose(fppng);
 
     fprintf(fpxml, "<spu start=\"%.3f\"", ((double)ms_start) / 1000);
-    dbg_print(DMT_608, "<spu start=\"%.3f\"", ((double)ms_start) / 1000);
+    dbg_print(CCX_DMT_608, "<spu start=\"%.3f\"", ((double)ms_start) / 1000);
     fprintf(fpxml, " end=\"%.3f\"", ((double)ms_end) / 1000);
-    dbg_print(DMT_608, " end=\"%.3f\"", ((double)ms_end) / 1000);
+    dbg_print(CCX_DMT_608, " end=\"%.3f\"", ((double)ms_end) / 1000);
     fprintf(fpxml, " image=\"%s\"", pngfile);
-    dbg_print(DMT_608, " image=\"%s\"", pngfile);
+    dbg_print(CCX_DMT_608, " image=\"%s\"", pngfile);
     fprintf(fpxml, " xoffset=\"%d\"", xOffset);
-    dbg_print(DMT_608, " xoffset=\"%d\"", xOffset);
+    dbg_print(CCX_DMT_608, " xoffset=\"%d\"", xOffset);
     fprintf(fpxml, " yoffset=\"%d\"", yOffset);
-    dbg_print(DMT_608, " yoffset=\"%d\"", yOffset);
+    dbg_print(CCX_DMT_608, " yoffset=\"%d\"", yOffset);
     fprintf(fpxml, ">\n<!--\n");
-    dbg_print(DMT_608, ">\n<!--\n");
+    dbg_print(CCX_DMT_608, ">\n<!--\n");
     for (row = 0; row < ROWS; row++)
     {
         if (data->row_used[row])
@@ -195,11 +195,11 @@ SpuPng::writeCCBuffer(struct eia608_screen* data, struct s_write *wb)
                 }
             }
             fprintf(fpxml, "%s\n", subline);
-            dbg_print(DMT_608, "%s\n", subline);
+            dbg_print(CCX_DMT_608, "%s\n", subline);
         }
     }
     fprintf(fpxml, "--></spu>\n");
-    dbg_print(DMT_608, "--></spu>\n");
+    dbg_print(CCX_DMT_608, "--></spu>\n");
 
     fflush(fpxml);
 
@@ -490,7 +490,7 @@ SpuPng::writePNG(struct eia608_screen* data,
 {
     unsigned int i;
 
-    if (setjmp (png_ptr->jmpbuf))
+    if (setjmp(png_jmpbuf(png_ptr)))
             return 0;
 
     png_init_io (png_ptr, fppng);

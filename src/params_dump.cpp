@@ -6,14 +6,14 @@ void params_dump(void)
     mprint ("Input: ");
 	switch (input_source)
 	{
-		case DS_FILE:
+		case CCX_DS_FILE:
 			for (int i=0;i<num_input_files;i++)
 			mprint ("%s%s",inputfile[i],i==(num_input_files-1)?"":",");	
 			break;
-		case DS_STDIN:
+		case CCX_DS_STDIN:
 			mprint ("stdin");
 			break;
-		case DS_NETWORK:
+		case CCX_DS_NETWORK:
 		    if (udpaddr == INADDR_ANY)
 				mprint ("Network, UDP/%u",udpport);
 			else
@@ -103,10 +103,10 @@ void params_dump(void)
 			break;
 	}
 	mprint ("] ");		
-    mprint ("[Debug: %s] ", (debug_mask & DMT_VERBOSE) ? "Yes": "No");
+    mprint ("[Debug: %s] ", (debug_mask & CCX_DMT_VERBOSE) ? "Yes": "No");
     mprint ("[Buffer input: %s]\n", buffer_input ? "Yes": "No");
     mprint ("[Use pic_order_cnt_lsb for H.264: %s] ", usepicorder ? "Yes": "No");
-    mprint ("[Print CC decoder traces: %s]\n", (debug_mask & DMT_608) ? "Yes": "No");
+    mprint ("[Print CC decoder traces: %s]\n", (debug_mask & CCX_DMT_608) ? "Yes": "No");
     mprint ("[Target format: %s] ",extension);    
     mprint ("[Encoding: ");
     switch (encoding)

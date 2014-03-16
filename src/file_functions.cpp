@@ -81,7 +81,7 @@ void prepare_for_new_file (void)
 /* Close input file if there is one and let the GUI know */
 void close_input_file (void)
 {
-	if (infd!=-1 && input_source==DS_FILE)
+	if (infd!=-1 && input_source==CCX_DS_FILE)
     {
 		close (infd);
         infd=-1;        
@@ -89,6 +89,25 @@ void close_input_file (void)
     }
 }
 
+int init_sockets (void)
+{
+	static int socket_inited=0;
+	if (!socket_inited)
+	{
+#ifdef _WIN32
+		WSADATA wsaData = {0};
+		// Initialize Winsock
+		iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
+		if (iResult != 0) {
+			wprintf(L"WSAStartup failed: %d\n", iResult);
+			return 1;
+		}
+#endif
+		socket_inited=1;	
+	}
+
+	return 0;
+}
 
 /* Close current file and open next one in list -if any- */
 /* bytesinbuffer is the number of bytes read (in some buffer) that haven't been added
@@ -103,7 +122,7 @@ int switch_to_next_file (LLONG bytesinbuffer)
 		memset (PIDs_programs,0,65536*sizeof (struct PMT_entry *));		
 	}
 
-	if (input_source==DS_STDIN)
+	if (input_source==CCX_DS_STDIN)
 	{
 		if (infd!=-1) // Means we had already processed stdin. So we're done.
 			return 0;
@@ -112,20 +131,12 @@ int switch_to_next_file (LLONG bytesinbuffer)
 		mprint ("\rReading from standard input\n");
 		return 1;
 	}
-	if (input_source==DS_NETWORK)
+	if (input_source==CCX_DS_NETWORK)
 	{
 		if (infd!=-1) // Means we have already bound a socket.
 			return 0;
-#ifdef _WIN32
-	WSADATA wsaData = {0};
-    // Initialize Winsock
-    iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
-    if (iResult != 0) {
-        wprintf(L"WSAStartup failed: %d\n", iResult);
-        return 1;
-    }
-#endif
-
+		if (init_sockets())
+			return 1;
 		infd=socket(AF_INET,SOCK_DGRAM,0);	    
 		if (IN_MULTICAST(udpaddr)) 
 		{
@@ -133,7 +144,7 @@ int switch_to_next_file (LLONG bytesinbuffer)
 		    (void)setsockopt(infd, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof(on));
 		}
 		servaddr.sin_family = AF_INET;
-		servaddr.sin_addr.s_addr=htonl(INADDR_ANY);
+		servaddr.sin_addr.s_addr=htonl(IN_MULTICAST(udpaddr) ? htonl(udpaddr) : INADDR_ANY);
 		servaddr.sin_port=htons(udpport);
 		if (bind(infd,(struct sockaddr *)&servaddr,sizeof(servaddr)))
 		{
@@ -267,7 +278,7 @@ void buffered_seek (int offset)
 
 void sleepandchecktimeout (time_t start)
 {
-	if (input_source==DS_STDIN)
+	if (input_source==CCX_DS_STDIN)
     {
 		// CFS: Not 100% sure about this. Fine for files, not so sure what happens if stdin is 
 		// real time input from hardware.
@@ -365,7 +376,7 @@ LLONG buffered_read_opt (unsigned char *buffer, unsigned int bytes)
                         }
                         if (i==0 && live_stream)
                         {
-                            if (input_source==DS_STDIN)
+                            if (input_source==CCX_DS_STDIN)
                             {
                                 live_stream = 0;
                                 break;
@@ -390,7 +401,7 @@ LLONG buffered_read_opt (unsigned char *buffer, unsigned int bytes)
                 int keep = bytesinbuffer > 8 ? 8 : bytesinbuffer;
                 memmove (filebuffer,filebuffer+(FILEBUFFERSIZE-keep),keep);
 				int i;
-				if (input_source==DS_FILE || input_source==DS_STDIN)
+				if (input_source==CCX_DS_FILE || input_source==CCX_DS_STDIN)
 					i=read (infd, filebuffer+keep,FILEBUFFERSIZE-keep);
 				else
 				{

@@ -210,7 +210,7 @@ void dvprint(const char *fmt, ...)
     va_list args;
 	if (!messages_target)
 		return;
-	if(! (debug_mask & DMT_VIDES ))
+	if(! (debug_mask & CCX_DMT_VIDES ))
 		return;
 
     va_start(args, fmt);

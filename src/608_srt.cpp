@@ -18,8 +18,8 @@ void write_stringz_as_srt (char *string, struct s_write *wb, LLONG ms_start, LLO
     sprintf (timeline, "%02u:%02u:%02u,%03u --> %02u:%02u:%02u,%03u\r\n",
         h1,m1,s1,ms1, h2,m2,s2,ms2);
     enc_buffer_used=encode_line (enc_buffer,(unsigned char *) timeline);
-    dbg_print(DMT_608, "\n- - - SRT caption - - -\n");
-    dbg_print(DMT_608, "%s",timeline);
+    dbg_print(CCX_DMT_608, "\n- - - SRT caption - - -\n");
+    dbg_print(CCX_DMT_608, "%s",timeline);
     
     write (wb->fh, enc_buffer,enc_buffer_used);
     int len=strlen (string);
@@ -52,15 +52,15 @@ void write_stringz_as_srt (char *string, struct s_write *wb, LLONG ms_start, LLO
         unsigned int u = encode_line (el, begin);
         if (encoding!=ENC_UNICODE)
         {
-            dbg_print(DMT_608, "\r");
-            dbg_print(DMT_608, "%s\n",subline);
+            dbg_print(CCX_DMT_608, "\r");
+            dbg_print(CCX_DMT_608, "%s\n",subline);
         }
         write (wb->fh, el, u);
         write (wb->fh, encoded_crlf, encoded_crlf_length);
         begin+= strlen ((const char *) begin)+1;
     }
 
-    dbg_print(DMT_608, "- - - - - - - - - - - -\r\n");
+    dbg_print(CCX_DMT_608, "- - - - - - - - - - - -\r\n");
    
     write (wb->fh, encoded_crlf, encoded_crlf_length);
 	free(el);
@@ -104,8 +104,8 @@ int write_cc_buffer_as_srt (struct eia608_screen *data, struct s_write *wb)
         h1,m1,s1,ms1, h2,m2,s2,ms2);
     enc_buffer_used=encode_line (enc_buffer,(unsigned char *) timeline);
 
-    dbg_print(DMT_608, "\n- - - SRT caption ( %d) - - -\n", wb->data608->srt_counter);
-    dbg_print(DMT_608, "%s",timeline);
+    dbg_print(CCX_DMT_608, "\n- - - SRT caption ( %d) - - -\n", wb->data608->srt_counter);
+    dbg_print(CCX_DMT_608, "%s",timeline);
 
     write (wb->fh, enc_buffer,enc_buffer_used);		
     for (int i=0;i<15;i++)
@@ -177,8 +177,8 @@ int write_cc_buffer_as_srt (struct eia608_screen *data, struct s_write *wb)
             int length = get_decoder_line_encoded (subline, i, data);
             if (encoding!=ENC_UNICODE)
             {
-                dbg_print(DMT_608, "\r");
-                dbg_print(DMT_608, "%s\n",subline);
+                dbg_print(CCX_DMT_608, "\r");
+                dbg_print(CCX_DMT_608, "%s\n",subline);
             }
             write (wb->fh, subline, length);
             write (wb->fh, encoded_crlf, encoded_crlf_length);
@@ -186,7 +186,7 @@ int write_cc_buffer_as_srt (struct eia608_screen *data, struct s_write *wb)
             // fprintf (wb->fh,encoded_crlf);
         }
     }
-    dbg_print(DMT_608, "- - - - - - - - - - - -\r\n");
+    dbg_print(CCX_DMT_608, "- - - - - - - - - - - -\r\n");
     
     // fprintf (wb->fh, encoded_crlf);
     write (wb->fh, encoded_crlf, encoded_crlf_length);
