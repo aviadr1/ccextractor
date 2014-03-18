@@ -137,12 +137,13 @@ int cea708services[63]; // [] -> 1 for services to be processed
 
 int nofontcolor=0; // 1 = don't put <font color> tags 
 int notypesetting=0; // 1 = Don't put <i>, <u>, etc typesetting tags
-output_format write_format=OF_SRT; // 0=Raw, 1=srt, 2=SMI
+output_format write_format=CCX_OF_SRT; // 0=Raw, 1=srt, 2=SMI
 output_date_format date_format=ODF_NONE; 
-encoding_type encoding = ENC_UTF_8;
+encoding_type encoding = CCX_ENC_UTF_8;
 int usepicorder = 0; // Force the use of pic_order_cnt_lsb in AVC/H.264 data streams
 int auto_myth = 2; // Use myth-tv mpeg code? 0=no, 1=yes, 2=auto
 int wtvconvertfix = 0; // Fix broken Windows 7 conversion
+int wtvmpeg2 = 0; 
 int sentence_cap =0 ; // FIX CASE? = Fix case?
 char *sentence_cap_file=NULL; // Extra words file?
 int binary_concat=1; // Disabled by -ve or --videoedited
@@ -184,8 +185,8 @@ struct sockaddr_in servaddr, cliaddr;
 /* MP4 related stuff */
 unsigned mp4vidtrack=0; // Process the video track even if a CC dedicated track exists.
 
-struct s_write wbout1, wbout2; // Output structures
-struct s_write *wbxdsout=NULL; // Pointer, so it can share the same output file 
+struct ccx_s_write wbout1, wbout2; // Output structures
+struct ccx_s_write *wbxdsout=NULL; // Pointer, so it can share the same output file 
 
 /* File handles */
 FILE *fh_out_elementarystream;
@@ -268,28 +269,28 @@ int main(int argc, char *argv[])
 
     switch (write_format)
     {
-        case OF_RAW:
+        case CCX_OF_RAW:
             extension = ".raw";
             break;
-        case OF_SRT:
+        case CCX_OF_SRT:
             extension = ".srt";
             break;
-        case OF_SAMI:
+        case CCX_OF_SAMI:
             extension = ".smi";
             break;
-        case OF_SMPTETT:
+        case CCX_OF_SMPTETT:
             extension = ".ttml";
             break;
-        case OF_TRANSCRIPT:
+        case CCX_OF_TRANSCRIPT:
             extension = ".txt";
             break;
-        case OF_RCWT:
+        case CCX_OF_RCWT:
             extension = ".bin";
             break;
-        case OF_SPUPNG:
+        case CCX_OF_SPUPNG:
             extension = ".xml";
             break;
-		case OF_NULL:
+		case CCX_OF_NULL:
 			extension = "";
 			break;
         default:
@@ -303,11 +304,11 @@ int main(int argc, char *argv[])
 		tlt_config.page = ((tlt_config.page / 100) << 8) | (((tlt_config.page / 10) % 10) << 4) | (tlt_config.page % 10);
 	}
 
-    if (auto_stream==SM_MCPOODLESRAW && write_format==OF_RAW)
+    if (auto_stream==SM_MCPOODLESRAW && write_format==CCX_OF_RAW)
     {
         fatal (EXIT_INCOMPATIBLE_PARAMETERS, "-in=raw can only be used if the output is a subtitle file.\n");
     }
-    if (auto_stream==SM_RCWT && write_format==OF_RCWT && output_filename==NULL)
+    if (auto_stream==SM_RCWT && write_format==CCX_OF_RCWT && output_filename==NULL)
     {
         fatal (EXIT_INCOMPATIBLE_PARAMETERS,
                "CCExtractor's binary format can only be used simultaneously for input and\noutput if the output file name is specified given with -o.\n");
@@ -365,7 +366,7 @@ int main(int argc, char *argv[])
         fatal (EXIT_NOT_ENOUGH_MEMORY, "Not enough memory\n");        
     }
 
-	if (write_format!=OF_NULL)
+	if (write_format!=CCX_OF_NULL)
 	{
 		/* # DVD format uses one raw file for both fields, while Broadcast requires 2 */
 		if (rawmode==1)
@@ -395,7 +396,7 @@ int main(int argc, char *argv[])
 			if (cc_to_stdout && extract==12)			
 				fatal (EXIT_INCOMPATIBLE_PARAMETERS, "You can't extract both fields to stdout at the same time in broadcast mode.");
 			
-                        if (write_format == OF_SPUPNG && cc_to_stdout)
+                        if (write_format == CCX_OF_SPUPNG && cc_to_stdout)
                                 fatal (EXIT_INCOMPATIBLE_PARAMETERS, "You cannot use -out=spupng with -stdout.");
 
 			if (extract!=2)
@@ -421,13 +422,13 @@ int main(int argc, char *argv[])
 						fatal (EXIT_FILE_CREATION_FAILED, "Failed (errno=%d)\n",errno);
 					}
 				}
-				if (write_format==OF_RAW)
+				if (write_format==CCX_OF_RAW)
 					writeraw (BROADCAST_HEADER,sizeof (BROADCAST_HEADER),&wbout1);
 				else
 				{
-					if (encoding==ENC_UTF_8) // Write BOM
+					if (encoding==CCX_ENC_UTF_8) // Write BOM
 						writeraw (UTF8_BOM, sizeof (UTF8_BOM), &wbout1);
-					if (encoding==ENC_UNICODE) // Write BOM				
+					if (encoding==CCX_ENC_UNICODE) // Write BOM				
 						writeraw (LITTLE_ENDIAN_BOM, sizeof (LITTLE_ENDIAN_BOM), &wbout1);
 					write_subtitle_file_header (&wbout1);
 				}
@@ -458,13 +459,13 @@ int main(int argc, char *argv[])
 						fatal (EXIT_FILE_CREATION_FAILED, "Failed\n");                
 					}
 				}
-				if (write_format==OF_RAW)
+				if (write_format==CCX_OF_RAW)
 					writeraw (BROADCAST_HEADER,sizeof (BROADCAST_HEADER),&wbout2);
 				else
 				{
-					if (encoding==ENC_UTF_8) // Write BOM
+					if (encoding==CCX_ENC_UTF_8) // Write BOM
 						writeraw (UTF8_BOM, sizeof (UTF8_BOM), &wbout2);
-					if (encoding==ENC_UNICODE) // Write BOM				
+					if (encoding==CCX_ENC_UNICODE) // Write BOM				
 						writeraw (LITTLE_ENDIAN_BOM, sizeof (LITTLE_ENDIAN_BOM), &wbout2);
 					write_subtitle_file_header (&wbout2);
 				}
@@ -474,7 +475,7 @@ int main(int argc, char *argv[])
 
 	if (export_xds)
 	{
-		if (write_format==OF_TRANSCRIPT)
+		if (write_format==CCX_OF_TRANSCRIPT)
 		{
 			if (wbout1.fh!=-1)
 				wbxdsout=&wbout1;
@@ -546,6 +547,9 @@ int main(int argc, char *argv[])
                 case SM_ASF:
                     mprint ("\rFile seems to be an ASF, enabling DVR-MS mode\n");
                     break;
+                case SM_WTV:
+                    mprint ("\rFile seems to be an WTV, enabling WTV mode\n");
+                    break;
                 case SM_MCPOODLESRAW:
                     mprint ("\rFile seems to be McPoodle raw data\n");
                     break;
@@ -610,6 +614,9 @@ int main(int argc, char *argv[])
             case SM_TRANSPORT:
             case SM_PROGRAM:
             case SM_ASF:
+            case SM_WTV:
+				if (!use_gop_as_pts) // If !0 then the user selected something
+					use_gop_as_pts = 0; 
                 mprint ("\rAnalyzing data in general mode\n");
                 general_loop();
                 break;
@@ -762,15 +769,15 @@ int main(int argc, char *argv[])
 
     if (wbout1.fh!=-1)
     {
-        if (write_format==OF_SPUPNG)
+        if (write_format==CCX_OF_SPUPNG)
         {
             handle_end_of_data (&wbout1);
         }
-        if (write_format==OF_SMPTETT || write_format==OF_SAMI || write_format==OF_SRT || write_format==OF_TRANSCRIPT)
+        if (write_format==CCX_OF_SMPTETT || write_format==CCX_OF_SAMI || write_format==CCX_OF_SRT || write_format==CCX_OF_TRANSCRIPT)
         {
             handle_end_of_data (&wbout1);
         }
-        else if(write_format==OF_RCWT)
+        else if(write_format==CCX_OF_RCWT)
         {
             // Write last header and data
             writercwtdata (NULL);
@@ -781,11 +788,11 @@ int main(int argc, char *argv[])
     }
     if (wbout2.fh!=-1)
     {
-        if (write_format==OF_SPUPNG)
+        if (write_format==CCX_OF_SPUPNG)
         {
             handle_end_of_data (&wbout2);
         }
-        if (write_format==OF_SMPTETT || write_format==OF_SAMI || write_format==OF_SRT || write_format==OF_TRANSCRIPT)
+        if (write_format==CCX_OF_SMPTETT || write_format==CCX_OF_SAMI || write_format==CCX_OF_SRT || write_format==CCX_OF_TRANSCRIPT)
         {
             handle_end_of_data (&wbout2);
         }

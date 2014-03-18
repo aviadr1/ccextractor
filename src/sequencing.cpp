@@ -197,7 +197,7 @@ int do_cb (unsigned char *cc_block)
         cc_block[2]=0x80;
     }
 
-	if ( write_format!=OF_RAW && // In raw we cannot skip padding because timing depends on it
+	if ( write_format!=CCX_OF_RAW && // In raw we cannot skip padding because timing depends on it
 		(cc_block[0]==0xFA || cc_block[0]==0xFC || cc_block[0]==0xFD )
 		&& (cc_block[1]&0x7F)==0 && (cc_block[2]&0x7F)==0) // CFS: Skip non-data, makes debugging harder.
 		return 1; 
@@ -210,7 +210,7 @@ int do_cb (unsigned char *cc_block)
      * go through the 608/708 cases below.  We do that to get accurate
      * counts for cb_field1, cb_field2 and cb_708.
      * Note that printdata() and do_708() must not be called for
-     * the OF_RCWT case. */
+     * the CCX_OF_RCWT case. */
 
     if (cc_valid || cc_type==3)
     {
@@ -233,7 +233,7 @@ int do_cb (unsigned char *cc_block)
             }
             if (timeok)
             {
-                if(write_format!=OF_RCWT)
+                if(write_format!=CCX_OF_RCWT)
                     printdata (cc_block+1,2,0,0);
                 else
                     writercwtdata(cc_block);
@@ -255,7 +255,7 @@ int do_cb (unsigned char *cc_block)
             }
             if (timeok)
             {
-                if(write_format!=OF_RCWT)
+                if(write_format!=CCX_OF_RCWT)
                     printdata (0,0,cc_block+1,2);
                 else
                     writercwtdata(cc_block);
@@ -285,7 +285,7 @@ int do_cb (unsigned char *cc_block)
             temp[3]=cc_block[2];
             if (timeok)
             {
-                if(write_format!=OF_RCWT)
+                if(write_format!=CCX_OF_RCWT)
                    do_708 ((const unsigned char *) temp, 4);
                 else
                     writercwtdata(cc_block);

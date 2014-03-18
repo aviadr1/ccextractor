@@ -21,7 +21,7 @@
 #define CCPL (ccfont2_width / CCW * ccfont2_height / CCH)
 
 void
-write_spumux_header(struct s_write *wb)
+write_spumux_header(struct ccx_s_write *wb)
 {
     if (0 == wb->spupng_data)
         wb->spupng_data = new SpuPng(wb);
@@ -29,7 +29,7 @@ write_spumux_header(struct s_write *wb)
 }
 
 void
-write_spumux_footer(struct s_write *wb)
+write_spumux_footer(struct ccx_s_write *wb)
 {
     if (0 != wb->spupng_data)
     {
@@ -41,7 +41,7 @@ write_spumux_footer(struct s_write *wb)
 }
 
 int
-write_cc_buffer_as_spupng(struct eia608_screen *data, struct s_write *wb)
+write_cc_buffer_as_spupng(struct eia608_screen *data, struct ccx_s_write *wb)
 {
     if (0 != wb->spupng_data)
     {
@@ -52,7 +52,7 @@ write_cc_buffer_as_spupng(struct eia608_screen *data, struct s_write *wb)
 
 static int initialized = 0;
 
-SpuPng::SpuPng(struct s_write* wb)
+SpuPng::SpuPng(struct ccx_s_write* wb)
 {
     if (!initialized)
     {
@@ -120,7 +120,7 @@ SpuPng::writeFooter()
 }
 
 int
-SpuPng::writeCCBuffer(struct eia608_screen* data, struct s_write *wb)
+SpuPng::writeCCBuffer(struct eia608_screen* data, struct ccx_s_write *wb)
 {
     LLONG ms_start = wb->data608->current_visible_start_ms + subs_delay;
     if (ms_start < 0)

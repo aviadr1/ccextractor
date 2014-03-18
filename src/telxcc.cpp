@@ -565,7 +565,7 @@ void process_page(teletext_page_t *page) {
 			font_tag_opened = NO;
 		}
 
-		page_buffer_add_string ((write_format == OF_TRANSCRIPT) ? " " : "\r\n");
+		page_buffer_add_string ((write_format == CCX_OF_TRANSCRIPT) ? " " : "\r\n");
 		if (gui_mode_reports)
 		{
 			fprintf (stderr,"\n");						
@@ -575,7 +575,7 @@ void process_page(teletext_page_t *page) {
 	
 	switch (write_format)
 	{
-		case OF_TRANSCRIPT:
+		case CCX_OF_TRANSCRIPT:
 			if (page_buffer_prev_used==0) 
 				prev_show_timestamp=page->show_timestamp;
 			if (page_buffer_prev_used==0 ||
@@ -861,7 +861,7 @@ void process_telx_packet(data_unit_t data_unit_id, teletext_packet_payload_t *pa
 
 				dbg_print (CCX_DMT_TELETEXT, "- Transmission mode = %s\n", (transmission_mode == TRANSMISSION_MODE_SERIAL ? "serial" : "parallel"));
 
-				if (write_format == OF_TRANSCRIPT && date_format==ODF_DATE && !noautotimeref) {
+				if (write_format == CCX_OF_TRANSCRIPT && date_format==ODF_DATE && !noautotimeref) {
                     mprint ("- Broadcast Service Data Packet received, resetting UTC referential value to %s", ctime(&t0));
                     utc_refvalue = t;
                     states.pts_initialized = NO;
@@ -1070,7 +1070,7 @@ void telxcc_init(void)
 	if (!telxcc_inited)
 	{
 		telxcc_inited=1;
-		if (wbout1.fh!=-1 && encoding!=ENC_UTF_8) // If encoding it UTF8 then this was already done
+		if (wbout1.fh!=-1 && encoding!=CCX_ENC_UTF_8) // If encoding it UTF8 then this was already done
 			fdprintf(wbout1.fh, "\xef\xbb\xbf");		
 		memset (seen_sub_page,0,MAX_TLT_PAGES*sizeof (short int));
 	}	

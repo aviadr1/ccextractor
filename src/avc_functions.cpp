@@ -66,7 +66,8 @@ void do_NAL (unsigned char *NALstart, LLONG NAL_length)
         seq_parameter_set_rbsp(NALstart+1, NALstop);
         got_seq_para = 1;
     }
-    else if ( got_seq_para && (nal_unit_type == CCX_NAL_TYPE_CODED_SLICE_NON_IDR_PICTURE_1 || nal_unit_type == 5)) // Only if nal_unit_type=1
+    else if ( got_seq_para && (nal_unit_type == CCX_NAL_TYPE_CODED_SLICE_NON_IDR_PICTURE_1 || 
+		nal_unit_type == CCX_NAL_TYPE_CODED_SLICE_IDR_PICTURE)) // Only if nal_unit_type=1
     {
         // Found coded slice of a non-IDR picture        
         // We only need the slice header data, no need to implement

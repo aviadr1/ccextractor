@@ -42,6 +42,9 @@ void params_dump(void)
         case SM_ASF:
             mprint ("DVR-MS");
             break;
+        case SM_WTV:
+            mprint ("Windows Television (WTV)");
+            break;
         case SM_MCPOODLESRAW:
             mprint ("McPoodle's raw");
             break;
@@ -89,6 +92,12 @@ void params_dump(void)
     }
     mprint ("\n");
 
+    if (wtvmpeg2)
+    {
+        mprint (" [WTV use MPEG2 stream: Enabled]");
+    }
+    mprint ("\n");
+
     mprint ("[Timing mode: ");
 	switch (use_gop_as_pts)
 	{
@@ -111,13 +120,13 @@ void params_dump(void)
     mprint ("[Encoding: ");
     switch (encoding)
     {
-        case ENC_UNICODE:
+        case CCX_ENC_UNICODE:
             mprint ("Unicode");
             break;
-        case ENC_UTF_8:
+        case CCX_ENC_UTF_8:
             mprint ("UTF-8");
             break;
-        case ENC_LATIN_1:
+        case CCX_ENC_LATIN_1:
             mprint ("Latin-1");
             break;
     }

@@ -10,13 +10,13 @@ unsigned encode_line (unsigned char *buffer, unsigned char *text)
     {		
         switch (encoding)
         {
-            case ENC_UTF_8:
-            case ENC_LATIN_1:
+            case CCX_ENC_UTF_8:
+            case CCX_ENC_LATIN_1:
                 *buffer=*text;
                 bytes++;
                 buffer++;
                 break;
-            case ENC_UNICODE:				
+            case CCX_ENC_UNICODE:				
                 *buffer=*text;				
                 *(buffer+1)=0;
                 bytes+=2;				
@@ -129,14 +129,14 @@ unsigned get_decoder_line_basic (unsigned char *buffer, int line_num, struct eia
         char c=line[i];
         switch (encoding)
         {
-            case ENC_UTF_8:
+            case CCX_ENC_UTF_8:
                 bytes=get_char_in_utf_8 (buffer,c);
                 break;
-            case ENC_LATIN_1:
+            case CCX_ENC_LATIN_1:
                 get_char_in_latin_1 (buffer,c);
                 bytes=1;
                 break;
-            case ENC_UNICODE:
+            case CCX_ENC_UNICODE:
                 get_char_in_unicode (buffer,c);
                 bytes=2;				
                 break;
@@ -257,14 +257,14 @@ unsigned get_decoder_line_encoded (unsigned char *buffer, int line_num, struct e
         int bytes=0;
         switch (encoding)
         {
-            case ENC_UTF_8:
+            case CCX_ENC_UTF_8:
                 bytes=get_char_in_utf_8 (buffer,line[i]);
                 break;
-            case ENC_LATIN_1:
+            case CCX_ENC_LATIN_1:
                 get_char_in_latin_1 (buffer,line[i]);
                 bytes=1;
                 break;
-            case ENC_UNICODE:
+            case CCX_ENC_UNICODE:
                 get_char_in_unicode (buffer,line[i]);
                 bytes=2;				
                 break;
@@ -302,7 +302,7 @@ void fprintf_encoded (FILE *fh, const char *string)
     fwrite (enc_buffer,enc_buffer_used,1,fh);
 }
 
-void write_cc_buffer_to_gui (struct eia608_screen *data, struct s_write *wb)
+void write_cc_buffer_to_gui (struct eia608_screen *data, struct ccx_s_write *wb)
 {
     unsigned h1,m1,s1,ms1;
     unsigned h2,m2,s2,ms2;    
@@ -350,7 +350,7 @@ void write_cc_buffer_to_gui (struct eia608_screen *data, struct s_write *wb)
     fflush (stderr);
 }
 
-void try_to_add_end_credits (struct s_write *wb)
+void try_to_add_end_credits (struct ccx_s_write *wb)
 {
     if (wb->fh==-1)
         return;
@@ -365,13 +365,13 @@ void try_to_add_end_credits (struct s_write *wb)
 
     switch (write_format)
     {
-        case OF_SRT:
+        case CCX_OF_SRT:
             write_stringz_as_srt(end_credits_text,wb,st,end);
             break;
-        case OF_SAMI:
+        case CCX_OF_SAMI:
             write_stringz_as_sami(end_credits_text,wb,st,end);
             break;
-		case OF_SMPTETT:
+		case CCX_OF_SMPTETT:
 			write_stringz_as_smptett(end_credits_text,wb,st,end);
 			break ;
         default:
@@ -380,7 +380,7 @@ void try_to_add_end_credits (struct s_write *wb)
     }    
 }
 
-void try_to_add_start_credits (struct s_write *wb)
+void try_to_add_start_credits (struct ccx_s_write *wb)
 {
     LLONG l = wb->data608->current_visible_start_ms+subs_delay;
     // We have a windows from last_displayed_subs_ms to l - we need to see if it fits
@@ -420,13 +420,13 @@ void try_to_add_start_credits (struct s_write *wb)
     end=st+length;
     switch (write_format)
     {
-        case OF_SRT:
+        case CCX_OF_SRT:
             write_stringz_as_srt(start_credits_text,wb,st,end);
             break;
-        case OF_SAMI:
+        case CCX_OF_SAMI:
             write_stringz_as_sami(start_credits_text,wb,st,end);
             break;
-        case OF_SMPTETT:
+        case CCX_OF_SMPTETT:
             write_stringz_as_smptett(start_credits_text,wb,st,end);
             break;
         default:

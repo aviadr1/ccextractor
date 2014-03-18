@@ -564,6 +564,9 @@ void general_loop(void)
             case SM_ASF:
                 i = asf_getmoredata();
                 break;
+            case SM_WTV:
+                i = wtv_getmoredata();
+                break;
             default:
                 fatal(EXIT_BUG_BUG, "Impossible stream_mode");
         }

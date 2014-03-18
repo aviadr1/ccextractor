@@ -8,6 +8,7 @@
 - GUI: Added UTF-8 support to preview Window (used for teletext).
 - Fixes in Makefile and build script, compilation in linux was failed
   if another libpng was found in the system.
+- WTV support directly in CCExtractor (no need for wtvccdump any more).
 
 0.68
 ----

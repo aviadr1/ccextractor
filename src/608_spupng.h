@@ -6,13 +6,13 @@
 class SpuPng
 {
     public:
-        SpuPng(struct s_write* wb);
+        SpuPng(struct ccx_s_write* wb);
         ~SpuPng();
 
         void writeHeader();
         void writeFooter();
 
-        int writeCCBuffer(struct eia608_screen* data, struct s_write *wb);
+		int writeCCBuffer(struct eia608_screen* data, struct ccx_s_write *wb);
 
     private:
         static void initFont(void);
