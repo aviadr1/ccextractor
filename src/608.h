@@ -49,8 +49,8 @@ int write_cc_buffer_as_spupng (struct eia608_screen* data, struct s_write* wb);
 
 #define CC608_SCREEN_WIDTH  32
 
-#define GUARANTEE(length) if (length>enc_buffer_capacity) \
-{enc_buffer_capacity*=2; enc_buffer=(unsigned char*) realloc (enc_buffer, enc_buffer_capacity); \
+#define REQUEST_BUFFER_CAPACITY(length) if (length>enc_buffer_capacity) \
+{enc_buffer_capacity=length*2; enc_buffer=(unsigned char*) realloc (enc_buffer, enc_buffer_capacity); \
     if (enc_buffer==NULL) { fatal (EXIT_NOT_ENOUGH_MEMORY, "Not enough memory, bailing out\n"); } \
 }
 

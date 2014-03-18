@@ -163,11 +163,42 @@ unsigned get_decoder_line_encoded_for_gui (unsigned char *buffer, int line_num, 
 
 }
 
+unsigned char *close_tag (unsigned char *buffer, char *tagstack, char tagtype, int *punderlined, int *pitalics, int *pchanged_font)
+{		
+	for (int l=strlen (tagstack)-1; l>=0;l--)
+	{
+		char cur=tagstack[l];
+		switch (cur)
+		{
+			case 'F':
+				buffer+= encode_line (buffer,(unsigned char *) "</font>");
+				(*pchanged_font)--;
+				break;
+			case 'U':
+				buffer+=encode_line (buffer, (unsigned char *) "</u>");
+				(*punderlined)--;
+				break;
+			case 'I':
+				buffer+=encode_line (buffer, (unsigned char *) "</i>");
+				(*pitalics)--;
+				break;
+		}
+		tagstack[l]=0; // Remove from stack
+		if (cur==tagtype) // We closed up to the required tag, done
+			return buffer;
+	}
+	if (tagtype!='A') // All
+		fatal (EXIT_BUG_BUG, "Mismatched tags in encoding, this is a bug, please report");
+	return buffer;
+}
+
 unsigned get_decoder_line_encoded (unsigned char *buffer, int line_num, struct eia608_screen *data)
 {
     int col = COL_WHITE;
     int underlined = 0;
     int italics = 0;	
+	int changed_font=0;
+	char tagstack[128]=""; // Keep track of opening/closing tags
 
     unsigned char *line = data->characters[line_num];	
     unsigned char *orig=buffer; // Keep for debugging
@@ -178,12 +209,11 @@ unsigned get_decoder_line_encoded (unsigned char *buffer, int line_num, struct e
     {	
         // Handle color
         int its_col = data->colors[line_num][i];
-        if (its_col != col  && !nofontcolor)
+        if (its_col != col  && !nofontcolor && 
+			!(col==COL_USERDEFINED && its_col==COL_WHITE)) // Don't replace user defined with white
         {
-            if (col!=COL_WHITE && col < COL_BLACK) // We need to close the previous font tag // We need to close the previous font tag
-            {
-                buffer+= encode_line (buffer,(unsigned char *) "</font>");
-            }
+			if (changed_font)
+				buffer = close_tag(buffer,tagstack,'F',&underlined,&italics,&changed_font);
             // Add new font tag
             buffer+=encode_line (buffer, (unsigned char*) color_text[its_col][1]);
             if (its_col==COL_USERDEFINED)
@@ -191,9 +221,13 @@ unsigned get_decoder_line_encoded (unsigned char *buffer, int line_num, struct e
                 // The previous sentence doesn't copy the whole 
                 // <font> tag, just up to the quote before the color
                 buffer+=encode_line (buffer, (unsigned char*) usercolor_rgb);
-                buffer+=encode_line (buffer, (unsigned char*) "\">");
-            }			
-
+                buffer+=encode_line (buffer, (unsigned char*) "\">");				
+            }
+			if (color_text[its_col][1][0]) // That means a <font> was added to the buffer
+			{
+				strcat (tagstack,"F");
+				changed_font++;
+			}
             col = its_col;
         }
         // Handle underlined
@@ -201,23 +235,25 @@ unsigned get_decoder_line_encoded (unsigned char *buffer, int line_num, struct e
         if (is_underlined && underlined==0 && !notypesetting) // Open underline
         {
             buffer+=encode_line (buffer, (unsigned char *) "<u>");
+			strcat (tagstack,"U");
+			underlined++;
         }
         if (is_underlined==0 && underlined && !notypesetting) // Close underline
         {
-            buffer+=encode_line (buffer, (unsigned char *) "</u>");
-        } 
-        underlined=is_underlined;
+			buffer = close_tag(buffer,tagstack,'U',&underlined,&italics,&changed_font);
+        }         
         // Handle italics
         int has_ita = data->fonts[line_num][i] & FONT_ITALICS;		
         if (has_ita && italics==0 && !notypesetting) // Open italics
         {
             buffer+=encode_line (buffer, (unsigned char *) "<i>");
+			strcat (tagstack,"I");
+			italics++;
         }
         if (has_ita==0 && italics && !notypesetting) // Close italics
         {
-            buffer+=encode_line (buffer, (unsigned char *) "</i>");
-        } 
-        italics=has_ita;
+			buffer = close_tag(buffer,tagstack,'I',&underlined,&italics,&changed_font);            
+        }         
         int bytes=0;
         switch (encoding)
         {
@@ -235,18 +271,9 @@ unsigned get_decoder_line_encoded (unsigned char *buffer, int line_num, struct e
         }
         buffer+=bytes;        
     }
-    if (italics && !notypesetting)
-    {
-        buffer+=encode_line (buffer, (unsigned char *) "</i>");
-    }
-    if (underlined && !notypesetting)
-    {
-        buffer+=encode_line (buffer, (unsigned char *) "</u>");
-    }
-    if (col != COL_WHITE && col < COL_BLACK && !nofontcolor)
-    {
-        buffer+=encode_line (buffer, (unsigned char *) "</font>");
-    }
+	buffer = close_tag(buffer,tagstack,'A',&underlined,&italics,&changed_font);
+	if (underlined || italics || changed_font)
+		fatal (EXIT_BUG_BUG, "Not all tags closed in encoding, this is a bug, please report.\n");
     *buffer=0;
     return (unsigned) (buffer-orig); // Return length
 }
@@ -260,7 +287,7 @@ void delete_all_lines_but_current (struct eia608_screen *data, int row)
         {
             memset(data->characters[i],' ',CC608_SCREEN_WIDTH);
             data->characters[i][CC608_SCREEN_WIDTH]=0;		
-            memset (data->colors[i],COL_TRANSPARENT,CC608_SCREEN_WIDTH+1); 
+            memset (data->colors[i],default_color,CC608_SCREEN_WIDTH+1); 
             memset (data->fonts[i],FONT_REGULAR,CC608_SCREEN_WIDTH+1); 
             data->row_used[i]=0;        
         }
@@ -270,7 +297,7 @@ void delete_all_lines_but_current (struct eia608_screen *data, int row)
 
 void fprintf_encoded (FILE *fh, const char *string)
 {
-    GUARANTEE(strlen (string)*3);
+    REQUEST_BUFFER_CAPACITY(strlen (string)*3);
     enc_buffer_used=encode_line (enc_buffer,(unsigned char *) string);
     fwrite (enc_buffer,enc_buffer_used,1,fh);
 }
@@ -378,11 +405,11 @@ void try_to_add_start_credits (struct s_write *wb)
     LLONG length=startcreditsforatmost.time_in_ms > window ? 
         window : startcreditsforatmost.time_in_ms;
 
-    dbg_print(DMT_VERBOSE, "Last subs: %lld   Current position: %lld\n",
+    dbg_print(CCX_DMT_VERBOSE, "Last subs: %lld   Current position: %lld\n",
         last_displayed_subs_ms, l); 
-    dbg_print(DMT_VERBOSE, "Not before: %lld   Not after: %lld\n",
+    dbg_print(CCX_DMT_VERBOSE, "Not before: %lld   Not after: %lld\n",
         startcreditsnotbefore.time_in_ms, startcreditsnotafter.time_in_ms);
-    dbg_print(DMT_VERBOSE, "Start of window: %lld   End of window: %lld\n",st,end);
+    dbg_print(CCX_DMT_VERBOSE, "Start of window: %lld   End of window: %lld\n",st,end);
 
     if (window>length+2) 
     {

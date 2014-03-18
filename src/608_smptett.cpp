@@ -33,7 +33,7 @@ void write_stringz_as_smptett (char *string, struct s_write *wb, LLONG ms_start,
     sprintf ((char *) str,"<p begin=\"%02u:%02u:%02u,%03u\" end=\"%02u:%02u:%02u.%03u\">\r\n",h1,m1,s1,ms1, h2,m2,s2,ms2);
     if (encoding!=ENC_UNICODE)
     {
-        dbg_print(DMT_608, "\r%s\n", str);
+        dbg_print(CCX_DMT_608, "\r%s\n", str);
     }
     enc_buffer_used=encode_line (enc_buffer,(unsigned char *) str);
     write (wb->fh, enc_buffer,enc_buffer_used);		
@@ -67,8 +67,8 @@ void write_stringz_as_smptett (char *string, struct s_write *wb, LLONG ms_start,
         unsigned int u = encode_line (el, begin);
         if (encoding!=ENC_UNICODE)
         {
-            dbg_print(DMT_608, "\r");
-            dbg_print(DMT_608, "%s\n",subline);
+            dbg_print(CCX_DMT_608, "\r");
+            dbg_print(CCX_DMT_608, "%s\n",subline);
         }
         write (wb->fh, el, u);        
         //write (wb->fh, encoded_br, encoded_br_length);
@@ -80,14 +80,14 @@ void write_stringz_as_smptett (char *string, struct s_write *wb, LLONG ms_start,
     sprintf ((char *) str,"</p>\n");
     if (encoding!=ENC_UNICODE)
     {
-        dbg_print(DMT_608, "\r%s\n", str);
+        dbg_print(CCX_DMT_608, "\r%s\n", str);
     }
     enc_buffer_used=encode_line (enc_buffer,(unsigned char *) str);
     write (wb->fh, enc_buffer,enc_buffer_used);
     sprintf ((char *) str,"<p begin=\"%02u:%02u:%02u,%03u\">\n\n",h2,m2,s2,ms2);
     if (encoding!=ENC_UNICODE)
     {
-        dbg_print(DMT_608, "\r%s\n", str);
+        dbg_print(CCX_DMT_608, "\r%s\n", str);
     }
     enc_buffer_used=encode_line (enc_buffer,(unsigned char *) str);
     write (wb->fh, enc_buffer,enc_buffer_used);
@@ -116,7 +116,7 @@ int write_cc_buffer_as_smptett (struct eia608_screen *data, struct s_write *wb)
 
     if (encoding!=ENC_UNICODE)
     {
-        dbg_print(DMT_608, "\r%s\n", str);
+        dbg_print(CCX_DMT_608, "\r%s\n", str);
     }
     enc_buffer_used=encode_line (enc_buffer,(unsigned char *) str);
     write (wb->fh, enc_buffer,enc_buffer_used);
@@ -127,8 +127,8 @@ int write_cc_buffer_as_smptett (struct eia608_screen *data, struct s_write *wb)
             int length = get_decoder_line_encoded (subline, i, data);
             if (encoding!=ENC_UNICODE)
             {
-                dbg_print(DMT_608, "\r");
-                dbg_print(DMT_608, "%s\n",subline);
+                dbg_print(CCX_DMT_608, "\r");
+                dbg_print(CCX_DMT_608, "%s\n",subline);
             }
             write (wb->fh, subline, length);            
             wrote_something=1;
@@ -139,14 +139,14 @@ int write_cc_buffer_as_smptett (struct eia608_screen *data, struct s_write *wb)
     sprintf ((char *) str,"</p>\n");
     if (encoding!=ENC_UNICODE)
     {
-        dbg_print(DMT_608, "\r%s\n", str);
+        dbg_print(CCX_DMT_608, "\r%s\n", str);
     }
     enc_buffer_used=encode_line (enc_buffer,(unsigned char *) str);
     write (wb->fh, enc_buffer,enc_buffer_used);
 
     if (encoding!=ENC_UNICODE)
     {
-        dbg_print(DMT_608, "\r%s\n", str);
+        dbg_print(CCX_DMT_608, "\r%s\n", str);
     }
     enc_buffer_used=encode_line (enc_buffer,(unsigned char *) str);
     //write (wb->fh, enc_buffer,enc_buffer_used);

@@ -1,0 +1,148 @@
+#ifndef CCX_CONSTANTS_H
+#define CCX_CONSTANTS_H
+
+extern const char *framerates_types[16];
+extern const double framerates_values[16];
+
+extern const char *aspect_ratio_types[16];
+extern const char *pict_types[8];
+extern const char *slice_types[10];
+extern const char *cc_types[4];
+
+extern const unsigned char BROADCAST_HEADER[4];
+extern const unsigned char LITTLE_ENDIAN_BOM[2];
+extern const unsigned char UTF8_BOM[3];
+extern const unsigned char DVD_HEADER[8];
+extern const unsigned char lc1[1];
+extern const unsigned char lc2[1];
+extern const unsigned char lc3[2];
+extern const unsigned char lc4[2];
+extern const unsigned char lc5[1];
+extern const unsigned char lc6[1];
+
+extern const unsigned char rcwt_header[11];
+
+#define ONEPASS 120 /* Bytes we can always look ahead without going out of limits */
+#define BUFSIZE (2048*1024+ONEPASS) /* 2 Mb plus the safety pass */
+#define MAX_CLOSED_CAPTION_DATA_PER_PICTURE 32
+#define EIA_708_BUFFER_LENGTH   2048 // TODO: Find out what the real limit is
+#define TS_PACKET_PAYLOAD_LENGTH     184     // From specs
+#define SUBLINESIZE 2048 // Max. length of a .srt line - TODO: Get rid of this
+#define STARTBYTESLENGTH	(1024*1024)
+
+#define XMLRPC_CHUNK_SIZE (64*1024) // 64 Kb per chunk, to avoid too many realloc()
+
+enum ccx_debug_message_types 
+{
+	/* Each debug message now belongs to one of these types. Use bitmaps in case 
+	   we want one message to belong to more than one type. */	
+	CCX_DMT_PARSE=1, // Show information related to parsing the container
+	CCX_DMT_VIDES=2,// Show video stream related information
+	CCX_DMT_TIME=4, // Show GOP and PTS timing information
+	CCX_DMT_VERBOSE=8, // Show lots of debugging output
+	CCX_DMT_608=0x10, // Show CC-608 decoder debug? 
+	CCX_DMT_708=0x20, // Show CC-708 decoder debug? 
+	CCX_DMT_XDS=0x40, // Show XDS decoder debug?
+	CCX_DMT_CBRAW=0x80, // Caption blocks with FTS timing
+	CCX_DMT_GENERIC_NOTICES=0x100, // Generic, always displayed even if no debug is selected
+	CCX_DMT_TELETEXT=0x200, // Show teletext debug?
+	CCX_DMT_PAT=0x400, // Program Allocation Table dump
+	CCX_DMT_PMT=0x800, // Program Map Table dump
+	CCX_DMT_LEVENSHTEIN=0x1000, // Levenshtein distance calculations
+};
+
+// AVC NAL types
+enum ccx_avc_nal_types
+{
+	CCX_NAL_TYPE_UNSPECIFIED_0 = 0,
+	CCX_NAL_TYPE_CODED_SLICE_NON_IDR_PICTURE_1 = 1,
+	CCX_NAL_TYPE_CODED_SLICE_PARTITION_A = 2,
+	CCX_NAL_TYPE_CODED_SLICE_PARTITION_B = 3,
+	CCX_NAL_TYPE_CODED_SLICE_PARTITION_C = 4,
+	CCX_NAL_TYPE_CODED_SLICE_IDR_PICTURE = 5,
+	CCX_NAL_TYPE_SEI = 6,
+	CCX_NAL_TYPE_SEQUENCE_PARAMETER_SET_7 = 7,
+	CCX_NAL_TYPE_PICTURE_PARAMETER_SET = 8,
+	CCX_NAL_TYPE_ACCESS_UNIT_DELIMITER_9 = 9,
+	CCX_NAL_TYPE_END_OF_SEQUENCE = 10,
+	CCX_NAL_TYPE_END_OF_STREAM = 11,
+	CCX_NAL_TYPE_FILLER_DATA = 12,
+	CCX_NAL_TYPE_SEQUENCE_PARAMETER_SET_EXTENSION = 13,
+	CCX_NAL_TYPE_PREFIX_NAL_UNIT = 14,
+	CCX_NAL_TYPE_SUBSET_SEQUENCE_PARAMETER_SET = 15,
+	CCX_NAL_TYPE_RESERVED_16 = 16,
+	CCX_NAL_TYPE_RESERVED_17 = 18,
+	CCX_NAL_TYPE_RESERVED_18 = 18,
+	CCX_NAL_TYPE_CODED_SLICE_AUXILIARY_PICTURE = 19,
+	CCX_NAL_TYPE_CODED_SLICE_EXTENSION = 20, 
+	CCX_NAL_TYPE_RESERVED_21 = 21,
+	CCX_NAL_TYPE_RESERVED_22 = 22,
+	CCX_NAL_TYPE_RESERVED_23 = 23,
+	CCX_NAL_TYPE_UNSPECIFIED_24 = 24,
+	CCX_NAL_TYPE_UNSPECIFIED_25 = 25,
+	CCX_NAL_TYPE_UNSPECIFIED_26 = 26,
+	CCX_NAL_TYPE_UNSPECIFIED_27 = 27,
+	CCX_NAL_TYPE_UNSPECIFIED_28 = 28,
+	CCX_NAL_TYPE_UNSPECIFIED_29 = 29,
+	CCX_NAL_TYPE_UNSPECIFIED_30 = 30,
+	CCX_NAL_TYPE_UNSPECIFIED_31 = 31
+};
+
+// MPEG-2 TS stream types
+enum ccx_stream_type
+{
+    CCX_STREAM_TYPE_UNKNOWNSTREAM = 0,
+
+    CCX_STREAM_TYPE_VIDEO_MPEG1 = 0x01,
+    CCX_STREAM_TYPE_VIDEO_MPEG2 = 0x02,
+    CCX_STREAM_TYPE_AUDIO_MPEG1 = 0x03,
+    CCX_STREAM_TYPE_AUDIO_MPEG2 = 0x04,
+	CCX_STREAM_TYPE_PRIVATE_TABLE_MPEG2 = 0x05,
+	CCX_STREAM_TYPE_PRIVATE_MPEG2 = 0x06,
+	CCX_STREAM_TYPE_MHEG_PACKETS = 0x07,
+	CCX_STREAM_TYPE_MPEG2_ANNEX_A_DSM_CC = 0x08,
+	CCX_STREAM_TYPE_ITU_T_H222_1 = 0x09,	
+	CCX_STREAM_TYPE_ISO_IEC_13818_6_TYPE_A = 0x0A,
+	CCX_STREAM_TYPE_ISO_IEC_13818_6_TYPE_B = 0x0B,
+	CCX_STREAM_TYPE_ISO_IEC_13818_6_TYPE_C = 0x0C,
+	CCX_STREAM_TYPE_ISO_IEC_13818_6_TYPE_D = 0x0D,
+    CCX_STREAM_TYPE_AUDIO_AAC   = 0x0f,
+    CCX_STREAM_TYPE_VIDEO_MPEG4 = 0x10,
+    CCX_STREAM_TYPE_VIDEO_H264  = 0x1b,
+	CCX_STREAM_TYPE_PRIVATE_USER_MPEG2=0x80,
+    CCX_STREAM_TYPE_AUDIO_AC3   = 0x81,
+    CCX_STREAM_TYPE_AUDIO_HDMV_DTS = 0x82,
+    CCX_STREAM_TYPE_AUDIO_DTS   = 0x8a,
+};
+
+enum ccx_mpeg_descriptor
+{
+	CCX_MPEG_DSC_REGISTRATION = 0x05, 
+	CCX_MPEG_DSC_DATA_STREAM_ALIGNMENT = 0x06,
+	CCX_MPEG_DSC_ISO639_LANGUAGE = 0x0A,
+	CCX_MPEG_DSC_VBI_DATA_DESCRIPTOR = 0x45,
+	CCX_MPEG_DSC_VBI_TELETEXT_DESCRIPTOR = 0x46,
+	CCX_MPEG_DSC_TELETEXT_DESCRIPTOR = 0x56,
+};
+
+enum
+{
+	MESSAGES_QUIET = 0,
+	MESSAGES_STDOUT =1,
+	MESSAGES_STDERR =2
+};
+
+enum ccx_datasource
+{
+	CCX_DS_FILE=0,
+	CCX_DS_STDIN=1,
+	CCX_DS_NETWORK=2
+};
+
+
+#define CCX_TXT_FORBIDDEN				0 // Ignore teletext packets
+#define CCX_TXT_AUTO_NOT_YET_FOUND		1
+#define CCX_TXT_IN_USE					2 // Positive autodetected, or forced, etc
+
+
+#endif

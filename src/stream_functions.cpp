@@ -296,7 +296,7 @@ int read_video_pes_header (unsigned char *nextheader, int *headerlength, int sbu
         if (pts_set==0)
             pts_set=1;
 
-        dbg_print(DMT_VERBOSE, "Set PTS: %s (%u)\n",
+        dbg_print(CCX_DMT_VERBOSE, "Set PTS: %s (%u)\n",
                    print_mstime((current_pts)/(MPEG_CLOCK_FREQ/1000)),
                    unsigned(current_pts) );
         /* The user data holding the captions seems to come between GOP and
@@ -316,7 +316,7 @@ int read_video_pes_header (unsigned char *nextheader, int *headerlength, int sbu
         mprint("False PES header\n");
     }
 
-    dbg_print(DMT_VERBOSE, "PES header length: %d (%d verified)  Data length: %d\n",
+    dbg_print(CCX_DMT_VERBOSE, "PES header length: %d (%d verified)  Data length: %d\n",
                *headerlength, hskip+9, payloadlength);
 
     return payloadlength;

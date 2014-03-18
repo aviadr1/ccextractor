@@ -156,7 +156,7 @@ void writercwtdata (const unsigned char *data)
                     cb = -1;
                 }
             }
-            dbg_print(DMT_CBRAW, "%s Write %d RCWT blocks - skipped %d padding / %d unused blocks.\n",
+            dbg_print(CCX_DMT_CBRAW, "%s Write %d RCWT blocks - skipped %d padding / %d unused blocks.\n",
                        print_mstime(prevfts), cbcount, storecbcount - cbcount, cbempty);
         }
 
@@ -221,7 +221,7 @@ void writercwtdata (const unsigned char *data)
         cbcount = 0;
         cbempty = 0;
 
-        dbg_print(DMT_CBRAW, "%s Write final padding RCWT blocks.\n",
+        dbg_print(CCX_DMT_CBRAW, "%s Write final padding RCWT blocks.\n",
                    print_mstime(currfts));
     }
 

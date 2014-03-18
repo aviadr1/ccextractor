@@ -101,10 +101,10 @@ void set_fts(void)
                                     -frames_since_ref_time+1)
                                    *1000.0/current_fps);
             }
-            dbg_print(DMT_TIME, "\nFirst sync time    PTS: %s %+lldms (time before this PTS)\n",
+            dbg_print(CCX_DMT_TIME, "\nFirst sync time    PTS: %s %+lldms (time before this PTS)\n",
                    print_mstime(min_pts/(MPEG_CLOCK_FREQ/1000)),
                    fts_offset );
-            dbg_print(DMT_TIME, "Total_frames_count %u frames_since_ref_time %u\n",
+            dbg_print(CCX_DMT_TIME, "Total_frames_count %u frames_since_ref_time %u\n",
                    total_frames_count, frames_since_ref_time);
         }
 
@@ -130,7 +130,7 @@ void set_fts(void)
             // Set min_pts = sync_pts as this is used for fts_now
             min_pts = sync_pts;
 
-            dbg_print(DMT_TIME, "\nNew min PTS time: %s %+lldms (time before this PTS)\n",
+            dbg_print(CCX_DMT_TIME, "\nNew min PTS time: %s %+lldms (time before this PTS)\n",
                    print_mstime(min_pts/(MPEG_CLOCK_FREQ/1000)),
                    fts_offset );
         }

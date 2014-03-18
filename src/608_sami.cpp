@@ -5,7 +5,7 @@ void write_stringz_as_sami (char *string, struct s_write *wb, LLONG ms_start, LL
     sprintf ((char *) str,"<SYNC start=%llu><P class=\"UNKNOWNCC\">\r\n",ms_start);
     if (encoding!=ENC_UNICODE)
     {
-        dbg_print(DMT_608, "\r%s\n", str);
+        dbg_print(CCX_DMT_608, "\r%s\n", str);
     }
     enc_buffer_used=encode_line (enc_buffer,(unsigned char *) str);
     write (wb->fh, enc_buffer,enc_buffer_used);		
@@ -39,8 +39,8 @@ void write_stringz_as_sami (char *string, struct s_write *wb, LLONG ms_start, LL
         unsigned int u = encode_line (el, begin);
         if (encoding!=ENC_UNICODE)
         {
-            dbg_print(DMT_608, "\r");
-            dbg_print(DMT_608, "%s\n",subline);
+            dbg_print(CCX_DMT_608, "\r");
+            dbg_print(CCX_DMT_608, "%s\n",subline);
         }
         write (wb->fh, el, u);        
         write (wb->fh, encoded_br, encoded_br_length);
@@ -52,14 +52,14 @@ void write_stringz_as_sami (char *string, struct s_write *wb, LLONG ms_start, LL
     sprintf ((char *) str,"</P></SYNC>\r\n");
     if (encoding!=ENC_UNICODE)
     {
-        dbg_print(DMT_608, "\r%s\n", str);
+        dbg_print(CCX_DMT_608, "\r%s\n", str);
     }
     enc_buffer_used=encode_line (enc_buffer,(unsigned char *) str);
     write (wb->fh, enc_buffer,enc_buffer_used);
     sprintf ((char *) str,"<SYNC start=%llu><P class=\"UNKNOWNCC\">&nbsp;</P></SYNC>\r\n\r\n",ms_end);
     if (encoding!=ENC_UNICODE)
     {
-        dbg_print(DMT_608, "\r%s\n", str);
+        dbg_print(CCX_DMT_608, "\r%s\n", str);
     }
     enc_buffer_used=encode_line (enc_buffer,(unsigned char *) str);
     write (wb->fh, enc_buffer,enc_buffer_used);
@@ -81,7 +81,7 @@ int write_cc_buffer_as_sami (struct eia608_screen *data, struct s_write *wb)
     sprintf ((char *) str,"<SYNC start=%llu><P class=\"UNKNOWNCC\">\r\n",startms);
     if (encoding!=ENC_UNICODE)
     {
-        dbg_print(DMT_608, "\r%s\n", str);
+        dbg_print(CCX_DMT_608, "\r%s\n", str);
     }
     enc_buffer_used=encode_line (enc_buffer,(unsigned char *) str);
     write (wb->fh, enc_buffer,enc_buffer_used);
@@ -92,8 +92,8 @@ int write_cc_buffer_as_sami (struct eia608_screen *data, struct s_write *wb)
             int length = get_decoder_line_encoded (subline, i, data);
             if (encoding!=ENC_UNICODE)
             {
-                dbg_print(DMT_608, "\r");
-                dbg_print(DMT_608, "%s\n",subline);
+                dbg_print(CCX_DMT_608, "\r");
+                dbg_print(CCX_DMT_608, "%s\n",subline);
             }
             write (wb->fh, subline, length);            
             wrote_something=1;
@@ -105,14 +105,14 @@ int write_cc_buffer_as_sami (struct eia608_screen *data, struct s_write *wb)
     sprintf ((char *) str,"</P></SYNC>\r\n");
     if (encoding!=ENC_UNICODE)
     {
-        dbg_print(DMT_608, "\r%s\n", str);
+        dbg_print(CCX_DMT_608, "\r%s\n", str);
     }
     enc_buffer_used=encode_line (enc_buffer,(unsigned char *) str);
     write (wb->fh, enc_buffer,enc_buffer_used);
     sprintf ((char *) str,"<SYNC start=%llu><P class=\"UNKNOWNCC\">&nbsp;</P></SYNC>\r\n\r\n",endms);
     if (encoding!=ENC_UNICODE)
     {
-        dbg_print(DMT_608, "\r%s\n", str);
+        dbg_print(CCX_DMT_608, "\r%s\n", str);
     }
     enc_buffer_used=encode_line (enc_buffer,(unsigned char *) str);
     write (wb->fh, enc_buffer,enc_buffer_used);

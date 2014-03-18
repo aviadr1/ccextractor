@@ -30,7 +30,7 @@ typedef uint32_t in_addr_t;
 #include <netdb.h>
 #endif
 
-#define VERSION "0.68"
+#define VERSION "0.69"
 
 #include "disable_warnings.h"
 #ifdef _MSC_VER
@@ -50,6 +50,7 @@ typedef int64_t LLONG;
 #include "608.h"
 #include "708.h"
 #include "bitstream.h"
+#include "constants.h"
 
 #ifdef __OpenBSD__
 #define FOPEN64 fopen
@@ -103,15 +104,7 @@ typedef struct _stati64 FSTATSTRUCT;
 //typedef signed long long LLONG;
 
 
-#define ONEPASS 120 /* Bytes we can always look ahead without going out of limits */
-#define BUFSIZE (2048*1024+ONEPASS) /* 2 Mb plus the safety pass */
-#define MAX_CLOSED_CAPTION_DATA_PER_PICTURE 32
-#define EIA_708_BUFFER_LENGTH   2048 // TODO: Find out what the real limit is
-#define TS_PACKET_PAYLOAD_LENGTH     184     // From specs
-#define SUBLINESIZE 2048 // Max. length of a .srt line - TODO: Get rid of this
-#define STARTBYTESLENGTH	(1024*1024)
 
-#define XMLRPC_CHUNK_SIZE (64*1024) // 64 Kb per chunk, to avoid too many realloc()
 
 struct boundary_time
 {
@@ -224,8 +217,7 @@ extern LLONG fts_global; // Duration of previous files (-ve mode)
 extern int cb_field1, cb_field2, cb_708;
 extern int saw_caption_block;
 
-extern const char *framerates_types[16];
-extern const double framerates_values[16];
+
 extern unsigned char *buffer;
 extern LLONG past;
 extern LLONG total_inputsize, total_past; // Only in binary concat mode
@@ -233,14 +225,9 @@ extern LLONG total_inputsize, total_past; // Only in binary concat mode
 extern char **inputfile;
 extern int current_file;
 extern LLONG result; // Number of bytes read/skipped in last read operation
-enum datasource
-{
-	DS_FILE=0,
-	DS_STDIN=1,
-	DS_NETWORK=2
-};
 
-extern datasource input_source;
+
+extern ccx_datasource input_source;
 
 extern in_addr_t udpaddr; // UDP host address if using network instead of files
 extern unsigned udpport; // UDP port if using network instead of files
@@ -281,7 +268,7 @@ extern int live_stream;
     if (buffer!=NULL) memcpy (buffer,filebuffer+filebuffer_pos,bytes); \
     filebuffer_pos+=bytes; \
     result=bytes; \
-} else result=buffered_read_opt (buffer,bytes);
+} else { result=buffered_read_opt (buffer,bytes); if (gui_mode_reports && input_source==CCX_DS_NETWORK) {net_activity_gui++; if (!(net_activity_gui%1000))activity_report_data_read();}}
 
 #define buffered_read_4(buffer) if (4<=bytesinbuffer-filebuffer_pos) { \
     if (buffer) { buffer[0]=filebuffer[filebuffer_pos]; \
@@ -298,142 +285,10 @@ extern int live_stream;
     result=1; } \
 } else result=buffered_read_opt (buffer,1);
 
-// ASF GUIDs
-// 10.1
-#define ASF_HEADER "\x30\x26\xB2\x75\x8E\x66\xCF\x11\xA6\xD9\x00\xAA\x00\x62\xCE\x6C"
-#define ASF_DATA "\x36\x26\xB2\x75\x8E\x66\xCF\x11\xA6\xD9\x00\xAA\x00\x62\xCE\x6C"
-
-// 10.2
-#define ASF_FILE_PROPERTIES "\xA1\xDC\xAB\x8C\x47\xA9\xCF\x11\x8E\xE4\x00\xC0\x0C\x20\x53\x65"
-#define ASF_STREAM_PROPERTIES "\x91\x07\xDC\xB7\xB7\xA9\xCF\x11\x8E\xE6\x00\xC0\x0C\x20\x53\x65"
-#define ASF_HEADER_EXTENSION "\xB5\x03\xBF\x5F\x2E\xA9\xCF\x11\x8E\xE3\x00\xC0\x0C\x20\x53\x65"
-#define ASF_CONTENT_DESCRIPTION "\x33\x26\xB2\x75\x8E\x66\xCF\x11\xA6\xD9\x00\xAA\x00\x62\xCE\x6C"
-#define ASF_EXTENDED_CONTENT_DESCRIPTION "\x40\xA4\xD0\xD2\x07\xE3\xD2\x11\x97\xF0\x00\xA0\xC9\x5E\xA8\x50"
-#define ASF_STREAM_BITRATE_PROPERTIES "\xCE\x75\xF8\x7B\x8D\x46\xD1\x11\x8D\x82\x00\x60\x97\xC9\xA2\xB2"
-// 10.3
-#define ASF_EXTENDED_STREAM_PROPERTIES "\xCB\xA5\xE6\x14\x72\xC6\x32\x43\x83\x99\xA9\x69\x52\x06\x5B\x5A"
-#define ASF_METADATA "\xEA\xCB\xF8\xC5\xAF\x5B\x77\x48\x84\x67\xAA\x8C\x44\xFA\x4C\xCA"
-#define ASF_METADATA_LIBRARY "\x94\x1C\x23\x44\x98\x94\xD1\x49\xA1\x41\x1D\x13\x4E\x45\x70\x54"
-#define ASF_COMPATIBILITY2 "\x5D\x8B\xF1\x26\x84\x45\xEC\x47\x9F\x5F\x0E\x65\x1F\x04\x52\xC9"
-// Actually 10.2
-#define ASF_PADDING "\x74\xD4\x06\x18\xDF\xCA\x09\x45\xA4\xBA\x9A\xAB\xCB\x96\xAA\xE8"
-// 10.4
-#define ASF_AUDIO_MEDIA "\x40\x9E\x69\xF8\x4D\x5B\xCF\x11\xA8\xFD\x00\x80\x5F\x5C\x44\x2B"
-#define ASF_VIDEO_MEDIA "\xC0\xEF\x19\xBC\x4D\x5B\xCF\x11\xA8\xFD\x00\x80\x5F\x5C\x44\x2B"
-#define ASF_BINARY_MEDIA "\xE2\x65\xFB\x3A\xEF\x47\xF2\x40\xAC\x2C\x70\xA9\x0D\x71\xD3\x43"
-
-// ASF_BINARY_MEDIA : Major media types
-#define DVRMS_AUDIO "\x9D\x8C\x17\x31\xE1\x03\x28\x45\xB5\x82\x3D\xF9\xDB\x22\xF5\x03"
-#define DVRMS_NTSC "\x80\xEA\x0A\x67\x82\x3A\xD0\x11\xB7\x9B\x00\xAA\x00\x37\x67\xA7"
-#define DVRMS_ATSC "\x89\x8A\x8B\xB8\x49\xB0\x80\x4C\xAD\xCF\x58\x98\x98\x5E\x22\xC1"
-
-// 10.13 - Undocumented DVR-MS properties
-#define DVRMS_PTS "\x2A\xC0\x3C\xFD\xDB\x06\xFA\x4C\x80\x1C\x72\x12\xD3\x87\x45\xE4"
-
-enum debug_message_types 
-{
-	/* Each debug message now belongs to one of these types. Use bitmaps in case 
-	   we want one message to belong to more than one type. */	
-	DMT_PARSE=1, // Show information related to parsing the container
-	DMT_VIDES=2,// Show video stream related information
-	DMT_TIME=4, // Show GOP and PTS timing information
-	DMT_VERBOSE=8, // Show lots of debugging output
-	DMT_608=0x10, // Show CC-608 decoder debug? 
-	DMT_708=0x20, // Show CC-708 decoder debug? 
-	DMT_XDS=0x40, // Show XDS decoder debug?
-	DMT_CBRAW=0x80, // Caption blocks with FTS timing
-	DMT_GENERIC_NOTICES=0x100, // Generic, always displayed even if no debug is selected
-	DMT_TELETEXT=0x200, // Show teletext debug?
-	DMT_PAT=0x400, // Program Allocation Table dump
-	DMT_PMT=0x800, // Program Map Table dump
-	DMT_LEVENSHTEIN=0x1000, // Levenshtein distance calculations
-};
-
-// AVC NAL types
-enum avc_nal_types
-{
-	NAL_TYPE_UNSPECIFIED_0 = 0,
-	NAL_TYPE_CODED_SLICE_NON_IDR_PICTURE_1 = 1,
-	NAL_TYPE_CODED_SLICE_PARTITION_A = 2,
-	NAL_TYPE_CODED_SLICE_PARTITION_B = 3,
-	NAL_TYPE_CODED_SLICE_PARTITION_C = 4,
-	NAL_TYPE_CODED_SLICE_IDR_PICTURE = 5,
-	NAL_TYPE_SEI = 6,
-	NAL_TYPE_SEQUENCE_PARAMETER_SET_7 = 7,
-	NAL_TYPE_PICTURE_PARAMETER_SET = 8,
-	NAL_TYPE_ACCESS_UNIT_DELIMITER_9 = 9,
-	NAL_TYPE_END_OF_SEQUENCE = 10,
-	NAL_TYPE_END_OF_STREAM = 11,
-	NAL_TYPE_FILLER_DATA = 12,
-	NAL_TYPE_SEQUENCE_PARAMETER_SET_EXTENSION = 13,
-	NAL_TYPE_PREFIX_NAL_UNIT = 14,
-	NAL_TYPE_SUBSET_SEQUENCE_PARAMETER_SET = 15,
-	NAL_TYPE_RESERVED_16 = 16,
-	NAL_TYPE_RESERVED_17 = 18,
-	NAL_TYPE_RESERVED_18 = 18,
-	NAL_TYPE_CODED_SLICE_AUXILIARY_PICTURE = 19,
-	NAL_TYPE_CODED_SLICE_EXTENSION = 20, 
-	NAL_TYPE_RESERVED_21 = 21,
-	NAL_TYPE_RESERVED_22 = 22,
-	NAL_TYPE_RESERVED_23 = 23,
-	NAL_TYPE_UNSPECIFIED_24 = 24,
-	NAL_TYPE_UNSPECIFIED_25 = 25,
-	NAL_TYPE_UNSPECIFIED_26 = 26,
-	NAL_TYPE_UNSPECIFIED_27 = 27,
-	NAL_TYPE_UNSPECIFIED_28 = 28,
-	NAL_TYPE_UNSPECIFIED_29 = 29,
-	NAL_TYPE_UNSPECIFIED_30 = 30,
-	NAL_TYPE_UNSPECIFIED_31 = 31
-};
-
-// MPEG-2 TS stream types
-enum stream_type
-{
-    UNKNOWNSTREAM = 0,
-
-    VIDEO_MPEG1 = 0x01,
-    VIDEO_MPEG2 = 0x02,
-    AUDIO_MPEG1 = 0x03,
-    AUDIO_MPEG2 = 0x04,
-	PRIVATE_TABLE_MPEG2 = 0x05,
-	PRIVATE_MPEG2 = 0x06,
-	MHEG_PACKETS = 0x07,
-	MPEG2_ANNEX_A_DSM_CC = 0x08,
-	ITU_T_H222_1 = 0x09,		
-    AUDIO_AAC   = 0x0f,
-    VIDEO_MPEG4 = 0x10,
-    VIDEO_H264  = 0x1b,
-	PRIVATE_USER_MPEG2=0x80,
-    AUDIO_AC3   = 0x81,
-    AUDIO_HDMV_DTS = 0x82,
-    AUDIO_DTS   = 0x8a,
-};
-
-enum mpeg_descriptor
-{
-	REGISTRATION = 0x05, 
-	DATA_STREAM_ALIGNMENT = 0x06,
-	ISO639_LANGUAGE = 0x0A,
-	VBI_DATA_DESCRIPTOR = 0x45,
-	VBI_TELETEXT_DESCRIPTOR = 0x46,
-	TELETEXT_DESCRIPTOR = 0x56,
-};
-
-enum
-{
-	MESSAGES_QUIET = 0,
-	MESSAGES_STDOUT =1,
-	MESSAGES_STDERR =2
-};
-
 extern const char *desc[256];
 
 extern FILE *fh_out_elementarystream;
 extern int infd;
-extern const char *aspect_ratio_types[16];
-extern const char *pict_types[8];
-extern const char *slice_types[10];
-extern const char *cc_types[4];
 extern int false_pict_header;
 
 extern int stat_numuserheaders;
@@ -517,7 +372,9 @@ void activity_xds_program_name (const char *program_name);
 void activity_xds_network_call_letters (const char *program_name);
 void activity_xds_program_identification_number (unsigned minutes, unsigned hours, unsigned date, unsigned month);
 void activity_xds_program_description (int line_num, const char *program_desc);
+void activity_report_data_read (void);
 
+extern unsigned long net_activity_gui;
 extern LLONG result;
 extern int end_of_file;
 extern LLONG inbuf;
@@ -560,6 +417,7 @@ LLONG gettotalfilessize (void);
 void prepare_for_new_file (void);
 void close_input_file (void);
 int switch_to_next_file (LLONG bytesinbuffer);
+int init_sockets (void);
 void return_to_buffer (unsigned char *buffer, unsigned int bytes);
 
 // timing.cpp
@@ -654,16 +512,7 @@ void write_subtitle_file_header (struct s_write *wb);
 void write_subtitle_file_footer (struct s_write *wb);
 extern void build_parity_table(void);
 
-extern const unsigned char BROADCAST_HEADER[4];
-extern const unsigned char LITTLE_ENDIAN_BOM[2];
-extern const unsigned char UTF8_BOM[3];
-extern const unsigned char DVD_HEADER[8];
-extern const unsigned char lc1[1];
-extern const unsigned char lc2[1];
-extern const unsigned char lc3[2];
-extern const unsigned char lc4[2];
-extern const unsigned char lc5[1];
-extern const unsigned char lc6[1];
+
 
 extern int last_reported_progress;
 extern int buffer_input;
@@ -694,7 +543,6 @@ extern int do_cea708; // Process 708 data?
 extern int cea708services[63]; // [] -> 1 for services to be processed
 extern char *sentence_cap_file;
 extern int auto_myth;
-extern const unsigned char rcwt_header[11];
 extern struct s_write wbout1, wbout2, *wbxdsout;
 extern int export_xds;
 extern int line_terminator_lf;
@@ -763,10 +611,6 @@ extern struct PMT_entry *PIDs_programs[65536];
 extern LLONG ts_start_of_xds; 
 extern int timestamps_on_transcript;
 
-#define TXT_FORBIDDEN				0 // Ignore teletext packets
-#define TXT_AUTO_NOT_YET_FOUND		1
-#define TXT_IN_USE					2 // Positive autodetected, or forced, etc
-
 extern unsigned telext_mode;
 
 extern int temp_debug;
@@ -776,7 +620,7 @@ extern int temp_debug;
 #endif
 
 // Stuff for telcc.cpp
-struct s_teletext_config {
+struct ccx_s_teletext_config {
 	uint8_t verbose : 1; // should telxcc be verbose?
 	uint16_t page; // teletext page containing cc we want to filter
 	uint16_t tid; // 13-bit packet ID for teletext stream
@@ -789,7 +633,7 @@ struct s_teletext_config {
 };
 
 extern uint64_t utc_refvalue; // UTC referential value
-extern struct s_teletext_config tlt_config;
+extern struct ccx_s_teletext_config tlt_config;
 extern uint32_t tlt_packet_counter;
 extern uint32_t tlt_frames_produced;
 void tlt_process_pes_packet(uint8_t *buffer, uint16_t size) ;

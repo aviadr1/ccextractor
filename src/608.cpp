@@ -37,7 +37,7 @@ int new_sentence=1; // Capitalize next letter?
 
 // Default color
 unsigned char usercolor_rgb[8]="";
-color_code default_color=COL_WHITE;
+color_code default_color=COL_TRANSPARENT;
 
 const char *sami_header= // TODO: Revise the <!-- comments
 "<SAMI>\n\
@@ -114,7 +114,7 @@ void clear_eia608_cc_buffer (struct eia608_screen *data)
     {
         memset(data->characters[i],' ',CC608_SCREEN_WIDTH);
         data->characters[i][CC608_SCREEN_WIDTH]=0;		
-        memset (data->colors[i],COL_TRANSPARENT,CC608_SCREEN_WIDTH+1);
+        memset (data->colors[i],default_color,CC608_SCREEN_WIDTH+1);
         memset (data->fonts[i],FONT_REGULAR,CC608_SCREEN_WIDTH+1); 
         data->row_used[i]=0;        
     }
@@ -183,7 +183,7 @@ void delete_to_end_of_row (struct s_write *wb)
 			// TODO: This can change the 'used' situation of a column, so we'd
 			// need to check and correct.
 	        use_buffer->characters[wb->data608->cursor_row][i]=' ';			
-			use_buffer->colors[wb->data608->cursor_row][i]=COL_TRANSPARENT;
+			use_buffer->colors[wb->data608->cursor_row][i]=default_color;
 			use_buffer->fonts[wb->data608->cursor_row][i]=wb->data608->font;	
 		}
 	}
@@ -225,18 +225,18 @@ void handle_text_attr (const unsigned char c1, const unsigned char c2, struct s_
     wb->data608->channel=wb->data608->new_channel;
     if (wb->data608->channel!=cc_channel)
         return;
-    dbg_print(DMT_608, "\r608: text_attr: %02X %02X",c1,c2);
+    dbg_print(CCX_DMT_608, "\r608: text_attr: %02X %02X",c1,c2);
     if ( ((c1!=0x11 && c1!=0x19) ||
         (c2<0x20 || c2>0x2f)))
     {
-        dbg_print(DMT_608, "\rThis is not a text attribute!\n");
+        dbg_print(CCX_DMT_608, "\rThis is not a text attribute!\n");
     }
     else
     {
         int i = c2-0x20;
         wb->data608->color=pac2_attribs[i][0];
         wb->data608->font=pac2_attribs[i][1];
-        dbg_print(DMT_608, "  --  Color: %s,  font: %s\n",
+        dbg_print(CCX_DMT_608, "  --  Color: %s,  font: %s\n",
             color_text[wb->data608->color][0],
             font_text[wb->data608->font]);
         // Mid-row codes should put a non-transparent space at the current position
@@ -255,7 +255,7 @@ void write_subtitle_file_footer (struct s_write *wb)
             sprintf ((char *) str,"</BODY></SAMI>\n");
             if (encoding!=ENC_UNICODE)
             {
-                dbg_print(DMT_608, "\r%s\n", str);
+                dbg_print(CCX_DMT_608, "\r%s\n", str);
             }
             enc_buffer_used=encode_line (enc_buffer,(unsigned char *) str);
             write (wb->fh, enc_buffer,enc_buffer_used);
@@ -264,7 +264,7 @@ void write_subtitle_file_footer (struct s_write *wb)
 			sprintf ((char *) str,"</div></body></tt>\n");
 			if (encoding!=ENC_UNICODE)
 			{
-				dbg_print(DMT_608, "\r%s\n", str);
+				dbg_print(CCX_DMT_608, "\r%s\n", str);
 			}
 			enc_buffer_used=encode_line (enc_buffer,(unsigned char *) str);
 			write (wb->fh, enc_buffer,enc_buffer_used);
@@ -286,13 +286,13 @@ void write_subtitle_file_header (struct s_write *wb)
             break; 
         case OF_SAMI: // This header brought to you by McPoodle's CCASDI  
             //fprintf_encoded (wb->fh, sami_header);
-            GUARANTEE(strlen (sami_header)*3);
+            REQUEST_BUFFER_CAPACITY(strlen (sami_header)*3);
             enc_buffer_used=encode_line (enc_buffer,(unsigned char *) sami_header);
             write (wb->fh, enc_buffer,enc_buffer_used);
             break;
         case OF_SMPTETT: // This header brought to you by McPoodle's CCASDI  
 			//fprintf_encoded (wb->fh, sami_header);
-			GUARANTEE(strlen (smptett_header)*3);
+			REQUEST_BUFFER_CAPACITY(strlen (smptett_header)*3);
             enc_buffer_used=encode_line (enc_buffer,(unsigned char *) smptett_header);
             write (wb->fh, enc_buffer,enc_buffer_used);
             break;
@@ -320,8 +320,8 @@ void write_cc_line_as_transcript (struct eia608_screen *data, struct s_write *wb
     int length = get_decoder_line_basic (subline, line_number, data);
     if (encoding!=ENC_UNICODE)
     {
-        dbg_print(DMT_608, "\r");
-        dbg_print(DMT_608, "%s\n",subline);
+        dbg_print(CCX_DMT_608, "\r");
+        dbg_print(CCX_DMT_608, "%s\n",subline);
     }
     if (length>0)
     {
@@ -408,7 +408,7 @@ int write_cc_buffer_as_transcript (struct eia608_screen *data, struct s_write *w
 {
     int wrote_something = 0;
 	wb->data608->ts_start_of_current_line=wb->data608->current_visible_start_ms;
-    dbg_print(DMT_608, "\n- - - TRANSCRIPT caption - - -\n");        
+    dbg_print(CCX_DMT_608, "\n- - - TRANSCRIPT caption - - -\n");        
     
     for (int i=0;i<15;i++)
     {
@@ -418,7 +418,7 @@ int write_cc_buffer_as_transcript (struct eia608_screen *data, struct s_write *w
         }
         wrote_something=1;
     }
-    dbg_print(DMT_608, "- - - - - - - - - - - -\r\n");
+    dbg_print(CCX_DMT_608, "- - - - - - - - - - - -\r\n");
     return wrote_something;
 }
 
@@ -593,7 +593,7 @@ int roll_up(struct s_write *wb)
         }
     }
     
-    dbg_print(DMT_608, "\rIn roll-up: %d lines used, first: %d, last: %d\n", rows_orig, firstrow, lastrow);
+    dbg_print(CCX_DMT_608, "\rIn roll-up: %d lines used, first: %d, last: %d\n", rows_orig, firstrow, lastrow);
 
     if (lastrow==-1) // Empty screen, nothing to rollup
         return 0;
@@ -611,13 +611,13 @@ int roll_up(struct s_write *wb)
     for (int j=0;j<(1+wb->data608->cursor_row-keep_lines);j++)
     {
         memset(use_buffer->characters[j],' ',CC608_SCREEN_WIDTH);			        
-		memset(use_buffer->colors[j],COL_TRANSPARENT,CC608_SCREEN_WIDTH);
+		memset(use_buffer->colors[j],default_color,CC608_SCREEN_WIDTH);
         memset(use_buffer->fonts[j],FONT_REGULAR,CC608_SCREEN_WIDTH);
         use_buffer->characters[j][CC608_SCREEN_WIDTH]=0;
         use_buffer->row_used[j]=0;
     }
     memset(use_buffer->characters[lastrow],' ',CC608_SCREEN_WIDTH);
-    memset(use_buffer->colors[lastrow],COL_WHITE,CC608_SCREEN_WIDTH);
+    memset(use_buffer->colors[lastrow],default_color,CC608_SCREEN_WIDTH);
     memset(use_buffer->fonts[lastrow],FONT_REGULAR,CC608_SCREEN_WIDTH);
 
     use_buffer->characters[lastrow][CC608_SCREEN_WIDTH]=0;
@@ -731,8 +731,8 @@ void handle_command (/*const */ unsigned char c1, const unsigned char c2, struct
 	else if (command==COM_ROLLUP4 && forced_ru==3)
 		command=COM_ROLLUP3;
 	
-	dbg_print(DMT_608, "\rCommand begin: %02X %02X (%s)\n",c1,c2,command_type[command]);
-	dbg_print(DMT_608, "\rCurrent mode: %d  Position: %d,%d  VisBuf: %d\n",wb->data608->mode,
+	dbg_print(CCX_DMT_608, "\rCommand begin: %02X %02X (%s)\n",c1,c2,command_type[command]);
+	dbg_print(CCX_DMT_608, "\rCurrent mode: %d  Position: %d,%d  VisBuf: %d\n",wb->data608->mode,
 		wb->data608->cursor_row,wb->data608->cursor_column, wb->data608->visible_buffer);        
 
     switch (command)
@@ -923,12 +923,12 @@ void handle_command (/*const */ unsigned char c1, const unsigned char c2, struct
 			//mprint ("to transcribe to a text file.\n");
 			break;
         default:
-            dbg_print(DMT_608, "\rNot yet implemented.\n");            
+            dbg_print(CCX_DMT_608, "\rNot yet implemented.\n");            
             break;
     }
-	dbg_print(DMT_608, "\rCurrent mode: %d  Position: %d,%d    VisBuf: %d\n",wb->data608->mode,
+	dbg_print(CCX_DMT_608, "\rCurrent mode: %d  Position: %d,%d    VisBuf: %d\n",wb->data608->mode,
 		wb->data608->cursor_row,wb->data608->cursor_column, wb->data608->visible_buffer);        
-	dbg_print(DMT_608, "\rCommand end: %02X %02X (%s)\n",c1,c2,command_type[command]);
+	dbg_print(CCX_DMT_608, "\rCommand end: %02X %02X (%s)\n",c1,c2,command_type[command]);
 
 }
 
@@ -948,7 +948,7 @@ void handle_double (const unsigned char c1, const unsigned char c2, struct s_wri
     if (c2>=0x30 && c2<=0x3f)
     {
         c=c2 + 0x50; // So if c>=0x80 && c<=0x8f, it comes from here
-        dbg_print(DMT_608, "\rDouble: %02X %02X  -->  %c\n",c1,c2,c);
+        dbg_print(CCX_DMT_608, "\rDouble: %02X %02X  -->  %c\n",c1,c2,c);
         write_char(c,wb);
     }
 }
@@ -960,7 +960,7 @@ unsigned char handle_extended (unsigned char hi, unsigned char lo, struct s_writ
     if (wb->data608->new_channel > 2) 
     {
         wb->data608->new_channel -= 2;
-        dbg_print(DMT_608, "\nChannel correction, now %d\n", wb->data608->new_channel);
+        dbg_print(CCX_DMT_608, "\nChannel correction, now %d\n", wb->data608->new_channel);
     }
     wb->data608->channel=wb->data608->new_channel;
     if (wb->data608->channel!=cc_channel)
@@ -969,7 +969,7 @@ unsigned char handle_extended (unsigned char hi, unsigned char lo, struct s_writ
     // For lo values between 0x20-0x3f
     unsigned char c=0;
 
-    dbg_print(DMT_608, "\rExtended: %02X %02X\n",hi,lo);
+    dbg_print(CCX_DMT_608, "\rExtended: %02X %02X\n",hi,lo);
     if (lo>=0x20 && lo<=0x3f && (hi==0x12 || hi==0x13))
     {
         switch (hi)
@@ -999,7 +999,7 @@ void handle_pac (unsigned char c1, unsigned char c2, struct s_write *wb)
     if (wb->data608->new_channel > 2) 
     {
         wb->data608->new_channel -= 2;
-        dbg_print(DMT_608, "\nChannel correction, now %d\n", wb->data608->new_channel);
+        dbg_print(CCX_DMT_608, "\nChannel correction, now %d\n", wb->data608->new_channel);
     }
     wb->data608->channel=wb->data608->new_channel;
     if (wb->data608->channel!=cc_channel)
@@ -1007,7 +1007,7 @@ void handle_pac (unsigned char c1, unsigned char c2, struct s_write *wb)
 
     int row=rowdata[((c1<<1)&14)|((c2>>5)&1)];
 
-    dbg_print(DMT_608, "\rPAC: %02X %02X",c1,c2);
+    dbg_print(CCX_DMT_608, "\rPAC: %02X %02X",c1,c2);
 
     if (c2>=0x40 && c2<=0x5f)
     {
@@ -1021,15 +1021,17 @@ void handle_pac (unsigned char c1, unsigned char c2, struct s_write *wb)
         }
         else
         {
-            dbg_print(DMT_608, "\rThis is not a PAC!!!!!\n");
+            dbg_print(CCX_DMT_608, "\rThis is not a PAC!!!!!\n");
             return;
         }
-    }
-    wb->data608->color=pac2_attribs[c2][0];
+    }	
+    wb->data608->color=pac2_attribs[c2][0];	
     wb->data608->font=pac2_attribs[c2][1];
     int indent=pac2_attribs[c2][2];
-    dbg_print(DMT_608, "  --  Position: %d:%d, color: %s,  font: %s\n",row,
+    dbg_print(CCX_DMT_608, "  --  Position: %d:%d, color: %s,  font: %s\n",row,
         indent,color_text[wb->data608->color][0],font_text[wb->data608->font]);
+	if (default_color==COL_USERDEFINED && (wb->data608->color==COL_WHITE || wb->data608->color==COL_TRANSPARENT))
+		wb->data608->color=COL_USERDEFINED;
     if (wb->data608->mode!=MODE_TEXT)
     {
         // According to Robson, row info is discarded in text mode
@@ -1050,7 +1052,7 @@ void handle_pac (unsigned char c1, unsigned char c2, struct s_write *wb)
 			if (use_buffer->row_used[j])
 			{
 				memset(use_buffer->characters[j],' ',CC608_SCREEN_WIDTH);							
-				memset(use_buffer->colors[j],COL_TRANSPARENT,CC608_SCREEN_WIDTH);
+				memset(use_buffer->colors[j],default_color,CC608_SCREEN_WIDTH);
 				memset(use_buffer->fonts[j],FONT_REGULAR,CC608_SCREEN_WIDTH);
 				use_buffer->characters[j][CC608_SCREEN_WIDTH]=0;
 				use_buffer->row_used[j]=0;
@@ -1065,7 +1067,7 @@ void handle_single (const unsigned char c1, struct s_write *wb)
 {	
     if (c1<0x20 || wb->data608->channel!=cc_channel)
         return; // We don't allow special stuff here
-    dbg_print(DMT_608, "%c",c1);
+    dbg_print(CCX_DMT_608, "%c",c1);
 
     write_char (c1,wb);
 }
@@ -1096,7 +1098,7 @@ int check_channel (unsigned char c1, struct s_write *wb)
 		newchan=2;
 	if (newchan!=wb->data608->channel)	
 	{
-		dbg_print(DMT_608, "\nChannel change, now %d\n", newchan);
+		dbg_print(CCX_DMT_608, "\nChannel change, now %d\n", newchan);
 		if (wb->data608->channel!=3) // Don't delete memories if returning from XDS. 
 		{
 			// erase_both_memories (wb); // 47cfr15.119.pdf, page 859, part f
@@ -1222,7 +1224,7 @@ void process608 (const unsigned char *data, int length, struct s_write *wb)
                 // diagnostic output from disCommand()
                 if (textprinted == 1 )
                 {
-                    dbg_print(DMT_608, "\n");
+                    dbg_print(CCX_DMT_608, "\n");
                     textprinted = 0;
                 }
 				if (!wb || wb->my_field==2)
@@ -1233,7 +1235,7 @@ void process608 (const unsigned char *data, int length, struct s_write *wb)
 				{
 					// Duplicate dual code, discard. Correct to do it only in
 					// non-XDS, XDS codes shall not be repeated.
-					 dbg_print(DMT_608, "Skipping command %02X,%02X Duplicate\n", hi, lo);
+					 dbg_print(CCX_DMT_608, "Skipping command %02X,%02X Duplicate\n", hi, lo);
                     // Ignore only the first repetition
                     wb->data608->last_c1=-1;
                     wb->data608->last_c2=-1;
@@ -1264,7 +1266,7 @@ void process608 (const unsigned char *data, int length, struct s_write *wb)
 
 					if( textprinted == 0 )
 					{
-						dbg_print(DMT_608, "\n");
+						dbg_print(CCX_DMT_608, "\n");
 						textprinted = 1;
 					}
 					
@@ -1277,7 +1279,7 @@ void process608 (const unsigned char *data, int length, struct s_write *wb)
 
 				if (!textprinted && wb->data608->channel==cc_channel )
 				{   // Current FTS information after the characters are shown
-					dbg_print(DMT_608, "Current FTS: %s\n", print_mstime(get_fts()));
+					dbg_print(CCX_DMT_608, "Current FTS: %s\n", print_mstime(get_fts()));
 					//printf("  N:%u", unsigned(fts_now) );
 					//printf("  G:%u", unsigned(fts_global) );
 					//printf("  F:%d %d %d %d\n",

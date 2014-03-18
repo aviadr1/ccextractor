@@ -54,32 +54,32 @@ void do_NAL (unsigned char *NALstart, LLONG NAL_length)
 		return;
 	}
 
-    if ( nal_unit_type == NAL_TYPE_ACCESS_UNIT_DELIMITER_9 )
+    if ( nal_unit_type == CCX_NAL_TYPE_ACCESS_UNIT_DELIMITER_9 )
     {
         // Found Access Unit Delimiter
     }
-    else if ( nal_unit_type == NAL_TYPE_SEQUENCE_PARAMETER_SET_7 )
+    else if ( nal_unit_type == CCX_NAL_TYPE_SEQUENCE_PARAMETER_SET_7 )
     {
         // Found sequence parameter set
-        // We need this to parse NAL type 1 (NAL_TYPE_CODED_SLICE_NON_IDR_PICTURE_1)
+        // We need this to parse NAL type 1 (CCX_NAL_TYPE_CODED_SLICE_NON_IDR_PICTURE_1)
 		num_nal_unit_type_7++;        
         seq_parameter_set_rbsp(NALstart+1, NALstop);
         got_seq_para = 1;
     }
-    else if ( got_seq_para && (nal_unit_type == NAL_TYPE_CODED_SLICE_NON_IDR_PICTURE_1 || nal_unit_type == 5)) // Only if nal_unit_type=1
+    else if ( got_seq_para && (nal_unit_type == CCX_NAL_TYPE_CODED_SLICE_NON_IDR_PICTURE_1 || nal_unit_type == 5)) // Only if nal_unit_type=1
     {
         // Found coded slice of a non-IDR picture        
         // We only need the slice header data, no need to implement
         // slice_layer_without_partitioning_rbsp( );
         slice_header(NALstart+1, NALstop, nal_unit_type);
     }
-    else if ( got_seq_para && nal_unit_type == NAL_TYPE_SEI )
+    else if ( got_seq_para && nal_unit_type == CCX_NAL_TYPE_SEI )
     {
         // Found SEI (used for subtitles)
         //set_fts(); // FIXME - check this!!!        
         sei_rbsp(NALstart+1, NALstop);
     }
-    else if ( got_seq_para && nal_unit_type == NAL_TYPE_PICTURE_PARAMETER_SET )
+    else if ( got_seq_para && nal_unit_type == CCX_NAL_TYPE_PICTURE_PARAMETER_SET )
     {
         // Found Picture parameter set
     }
@@ -87,7 +87,7 @@ void do_NAL (unsigned char *NALstart, LLONG NAL_length)
 	{
 		mprint ("NAL process failed.\n");
 		mprint ("\n After decoding, the actual thing was (length =%d)\n", NALstop-(NALstart+1));
-		dump (DMT_GENERIC_NOTICES,NALstart+1, NALstop-(NALstart+1),0, 0);
+		dump (CCX_DMT_GENERIC_NOTICES,NALstart+1, NALstop-(NALstart+1),0, 0);
 	}
 
 }
@@ -118,7 +118,7 @@ LLONG process_avc (unsigned char *avcbuf, LLONG avcbuflen)
     int firstloop=1; // Check for valid start code at buffer start
 
     // Loop over NAL units
-    do
+    while(bpos < avcbuf + avcbuflen - 2) // bpos points to 0x01 plus at least two bytes
     {
         int zeropad=0; // Count leading zeros
 
@@ -187,7 +187,7 @@ LLONG process_avc (unsigned char *avcbuf, LLONG avcbuflen)
 
         if(*NALstart & 0x80)
         {
-            dump(DMT_GENERIC_NOTICES, NALstart-4,10, 0, 0);
+            dump(CCX_DMT_GENERIC_NOTICES, NALstart-4,10, 0, 0);
             fatal(EXIT_BUG_BUG,
                   "Broken AVC stream - forbidden_zero_bit not zero ...");
         }
@@ -202,8 +202,7 @@ LLONG process_avc (unsigned char *avcbuf, LLONG avcbuflen)
 
 		dvprint("END   NAL unit type: %d length %d  zeros: %d  ref_idc: %d - Buffered captions after: %d\n",
                 nal_unit_type,  NALstop-NALstart-1, zeropad, nal_ref_idc, !cc_buffer_saved);
-    }
-    while(bpos < avcbuf + avcbuflen - 2); // bpos points to 0x01 plus at least two bytes
+    }    
 
     return avcbuflen;
 }
@@ -285,7 +284,7 @@ void sei_rbsp (unsigned char *seibuf, unsigned char *seiend)
 		mprint ("WARNING: Unexpected SEI unit length...trying to continue.");
 		temp_debug = 1;
 		mprint ("\n Failed block (at sei_rbsp) was:\n");
-		dump (DMT_GENERIC_NOTICES,(unsigned char *) seibuf, seiend-seibuf,0,0);
+		dump (CCX_DMT_GENERIC_NOTICES,(unsigned char *) seibuf, seiend-seibuf,0,0);
 
 		num_unexpected_sei_length++;
 	}
@@ -325,14 +324,14 @@ unsigned char *sei_message (unsigned char *seibuf, unsigned char *seiend)
 		broken=1;
 		if (payloadType==4)		
 		{
-			dbg_print(DMT_VERBOSE, "Warning: Subtitles payload seems incorrect (too long), continuing but it doesn't look good..");
+			dbg_print(CCX_DMT_VERBOSE, "Warning: Subtitles payload seems incorrect (too long), continuing but it doesn't look good..");
 		}
 		else 
 		{
-			dbg_print(DMT_VERBOSE, "Warning: Non-subtitles payload seems incorrect (too long), continuing but it doesn't look good..");
+			dbg_print(CCX_DMT_VERBOSE, "Warning: Non-subtitles payload seems incorrect (too long), continuing but it doesn't look good..");
 		}
 	}
-	dbg_print(DMT_VERBOSE, "\n");
+	dbg_print(CCX_DMT_VERBOSE, "\n");
     // Ignore all except user_data_registered_itu_t_t35() payload
     if(!broken && payloadType == 4)
         user_data_registered_itu_t_t35(paystart, paystart+payloadSize);
@@ -391,17 +390,17 @@ void user_data_registered_itu_t_t35 (unsigned char *userbuf, unsigned char *user
 	switch (itu_t_35_provider_code)
 	{		
 		case 0x0031: // ANSI/SCTE 128
-			dbg_print(DMT_VERBOSE, "Caption block in ANSI/SCTE 128...");
+			dbg_print(CCX_DMT_VERBOSE, "Caption block in ANSI/SCTE 128...");
 			if (*tbuf==0x47 && *(tbuf+1)==0x41 && *(tbuf+2)==0x39 && *(tbuf+3)==0x34) // ATSC1_data() - GA94
 			{
-				dbg_print(DMT_VERBOSE, "ATSC1_data()...\n");
+				dbg_print(CCX_DMT_VERBOSE, "ATSC1_data()...\n");
 				tbuf+=4;
 				unsigned char user_data_type_code=*tbuf;
 				tbuf++;
 				switch (user_data_type_code)
 				{
 					case 0x03:
-						dbg_print(DMT_VERBOSE, "cc_data (finally)!\n");
+						dbg_print(CCX_DMT_VERBOSE, "cc_data (finally)!\n");
 						/*
 						cc_count = 2; // Forced test
 						process_cc_data_flag = (*tbuf & 2) >> 1;
@@ -469,10 +468,10 @@ void user_data_registered_itu_t_t35 (unsigned char *userbuf, unsigned char *user
 						copy_ccdata_to_buffer ((char *) cc_tmpdata, local_cc_count);
 						break;
 					case 0x06:
-						dbg_print(DMT_VERBOSE, "bar_data (unsupported for now)\n");
+						dbg_print(CCX_DMT_VERBOSE, "bar_data (unsupported for now)\n");
 						break;
 					default:
-						dbg_print(DMT_VERBOSE, "SCTE/ATSC reserved.\n");
+						dbg_print(CCX_DMT_VERBOSE, "SCTE/ATSC reserved.\n");
 				}
 				
 			}
@@ -491,16 +490,16 @@ void user_data_registered_itu_t_t35 (unsigned char *userbuf, unsigned char *user
 			}
 			else
 			{
-				dbg_print(DMT_VERBOSE, "SCTE/ATSC reserved.\n");
+				dbg_print(CCX_DMT_VERBOSE, "SCTE/ATSC reserved.\n");
 			}
 			break;
 		case 0x002F:
-            dbg_print(DMT_VERBOSE, "ATSC1_data() - provider_code = 0x002F\n");
+            dbg_print(CCX_DMT_VERBOSE, "ATSC1_data() - provider_code = 0x002F\n");
 
 			user_data_type_code = *((uint8_t*)tbuf);
 			if(user_data_type_code != 0x03)
 			{
-				dbg_print(DMT_VERBOSE, "Not supported  user_data_type_code: %02x\n",
+				dbg_print(CCX_DMT_VERBOSE, "Not supported  user_data_type_code: %02x\n",
 				   user_data_type_code);				
 				return;
 			}
@@ -890,14 +889,14 @@ void slice_header (unsigned char *heabuf, unsigned char *heaend, int nal_unit_ty
     if (isref && frames_since_last_gop == 1)
     {
         isref = 0;
-        dbg_print(DMT_TIME, "Ignoring this reference pic.\n");        
+        dbg_print(CCX_DMT_TIME, "Ignoring this reference pic.\n");        
     }
 
     // if slices are buffered - flush
     if (isref && !bottom_field_flag)
     {
         dvprint("\nReference pic! [%s]\n", slice_types[slice_type]);
-        dbg_print(DMT_TIME, "\nReference pic! [%s] maxrefcnt: %3d\n",
+        dbg_print(CCX_DMT_TIME, "\nReference pic! [%s] maxrefcnt: %3d\n",
                    slice_types[slice_type], maxrefcnt);
 
         // Flush buffered cc blocks before doing the housekeeping
@@ -1006,28 +1005,28 @@ void slice_header (unsigned char *heabuf, unsigned char *heaend, int nal_unit_ty
 
     set_fts(); // Keep frames_since_ref_time==0, use current_tref
 
-    dbg_print(DMT_TIME, "PTS: %s (%8u)",
+    dbg_print(CCX_DMT_TIME, "PTS: %s (%8u)",
            print_mstime(current_pts/(MPEG_CLOCK_FREQ/1000)),
            unsigned(current_pts));
-    dbg_print(DMT_TIME, "  picordercnt:%3lld tref:%3d idx:%3d refidx:%3d lmaxidx:%3d maxtref:%3d\n",
+    dbg_print(CCX_DMT_TIME, "  picordercnt:%3lld tref:%3d idx:%3d refidx:%3d lmaxidx:%3d maxtref:%3d\n",
            pic_order_cnt_lsb, current_tref,
            curridx, currref, lastmaxidx, maxtref);
-    dbg_print(DMT_TIME, "FTS: %s",
+    dbg_print(CCX_DMT_TIME, "FTS: %s",
            print_mstime(get_fts()));
-    dbg_print(DMT_TIME, "  sync_pts:%s (%8u)",
+    dbg_print(CCX_DMT_TIME, "  sync_pts:%s (%8u)",
            print_mstime(sync_pts/(MPEG_CLOCK_FREQ/1000)),
            unsigned(sync_pts));
-    dbg_print(DMT_TIME, " - %s since GOP: %2u",
+    dbg_print(CCX_DMT_TIME, " - %s since GOP: %2u",
            slice_types[slice_type],
            unsigned(frames_since_last_gop));
-    dbg_print(DMT_TIME, "  b:%lld  frame# %lld\n", bottom_field_flag, frame_num);
+    dbg_print(CCX_DMT_TIME, "  b:%lld  frame# %lld\n", bottom_field_flag, frame_num);
 
     // sync_pts is (was) set when current_tref was zero
     if ( lastmaxidx > -1 && current_tref == 0 )
     {
-		if (debug_mask & DMT_TIME )
+		if (debug_mask & CCX_DMT_TIME )
         {
-            dbg_print(DMT_TIME, "\nNew temporal reference:\n");
+            dbg_print(CCX_DMT_TIME, "\nNew temporal reference:\n");
             print_debug_timing();
         }
     }

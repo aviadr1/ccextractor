@@ -49,7 +49,7 @@ void store_hdcc(unsigned char *cc_data, int cc_count, int sequence_number, LLONG
     if (seq_index < 0 || seq_index > 2*MAXBFRAMES)
     {
         // Maybe missing an anchor frame - try to recover
-        dbg_print(DMT_VERBOSE, "Too many B-frames, or missing anchor frame. Trying to recover ..\n");
+        dbg_print(CCX_DMT_VERBOSE, "Too many B-frames, or missing anchor frame. Trying to recover ..\n");
 
         process_hdcc();
         anchor_hdcc( sequence_number);
@@ -102,7 +102,7 @@ void process_hdcc (void)
     // Remember the current value
     LLONG store_fts_now = fts_now;
 
-    dbg_print(DMT_VERBOSE, "Flush HD caption blocks\n");
+    dbg_print(CCX_DMT_VERBOSE, "Flush HD caption blocks\n");
 
     int reset_cb = -1;
 
@@ -139,7 +139,7 @@ void process_hdcc (void)
         if (cc_data_pkts[seq][cc_data_count[seq]*3]!=0xFF)
         {
             // This is not optional. Something is wrong.
-            dbg_print(DMT_VERBOSE, "Missing 0xFF marker at end\n");
+            dbg_print(CCX_DMT_VERBOSE, "Missing 0xFF marker at end\n");
             // A "continue;" here would ignore this caption, but we
             // process it.
         }
@@ -203,7 +203,7 @@ int do_cb (unsigned char *cc_block)
 		return 1; 
 
     // Print raw data with FTS.
-    dbg_print(DMT_CBRAW, "%s   %d   %02X:%02X:%02X", print_mstime(fts_now + fts_global),in_xds_mode,
+    dbg_print(CCX_DMT_CBRAW, "%s   %d   %02X:%02X:%02X", print_mstime(fts_now + fts_global),in_xds_mode,
                cc_block[0], cc_block[1], cc_block[2]);
 
     /* In theory the writercwtdata() function could return early and not
@@ -219,7 +219,7 @@ int do_cb (unsigned char *cc_block)
         switch (cc_type)
         {
         case 0:
-            dbg_print(DMT_CBRAW, "    %s   ..   ..\n",  debug_608toASC( cc_block, 0));
+            dbg_print(CCX_DMT_CBRAW, "    %s   ..   ..\n",  debug_608toASC( cc_block, 0));
 
             current_field=1;
             saw_caption_block = 1;
@@ -241,7 +241,7 @@ int do_cb (unsigned char *cc_block)
             cb_field1++;
             break;
         case 1:
-            dbg_print(DMT_CBRAW, "    ..   %s   ..\n",  debug_608toASC( cc_block, 1));
+            dbg_print(CCX_DMT_CBRAW, "    ..   %s   ..\n",  debug_608toASC( cc_block, 1));
 
             current_field=2;
             saw_caption_block = 1;
@@ -266,7 +266,7 @@ int do_cb (unsigned char *cc_block)
             // DTVCC packet data
             // Fall through
         case 3: //EIA-708
-            dbg_print(DMT_CBRAW, "    ..   ..   DD\n");
+            dbg_print(CCX_DMT_CBRAW, "    ..   ..   DD\n");
 
             // DTVCC packet start
             current_field=3;
@@ -300,8 +300,8 @@ int do_cb (unsigned char *cc_block)
     } // cc_valid
     else
     {
-        dbg_print(DMT_CBRAW, "    ..   ..   ..\n");
-        dbg_print(DMT_VERBOSE, "Found !(cc_valid || cc_type==3) - ignore this block\n");
+        dbg_print(CCX_DMT_CBRAW, "    ..   ..   ..\n");
+        dbg_print(CCX_DMT_VERBOSE, "Found !(cc_valid || cc_type==3) - ignore this block\n");
     }
 
     return 1;

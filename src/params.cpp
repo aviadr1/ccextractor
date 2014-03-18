@@ -738,7 +738,7 @@ void parse_parameters (int argc, char *argv[])
 		if (strcmp (argv[i], "-")==0)
 		{
 
-			input_source=DS_STDIN;
+			input_source=CCX_DS_STDIN;
 			live_stream=-1;
 			continue;
 		}
@@ -1115,17 +1115,17 @@ void parse_parameters (int argc, char *argv[])
 		}
         if (strcmp (argv[i],"-debug")==0)
 		{
-			debug_mask |= DMT_VERBOSE;
+			debug_mask |= CCX_DMT_VERBOSE;
 			continue;
 		}
         if (strcmp (argv[i],"-608")==0)
 		{
-			debug_mask |= DMT_608;
+			debug_mask |= CCX_DMT_608;
 			continue;
 		}
         if (strcmp (argv[i],"-deblev")==0)
 		{
-			debug_mask |= DMT_LEVENSHTEIN;  
+			debug_mask |= CCX_DMT_LEVENSHTEIN;  
 			continue;
 		}
         if (strcmp (argv[i],"-levdistmincnt")==0 && i<argc-1)
@@ -1142,17 +1142,17 @@ void parse_parameters (int argc, char *argv[])
 		}
         if (strcmp (argv[i],"-708")==0)
 		{
-            debug_mask |= DMT_708;    
+            debug_mask |= CCX_DMT_708;    
 			continue;
 		}
         if (strcmp (argv[i],"-goppts")==0) 
 		{
-            debug_mask |= DMT_TIME;
+            debug_mask |= CCX_DMT_TIME;
 			continue;
 		}
         if (strcmp (argv[i],"-vides")==0)
 		{
-            debug_mask |= DMT_VIDES;
+            debug_mask |= CCX_DMT_VIDES;
 			continue;
 		}
         if (strcmp (argv[i],"-xds")==0)
@@ -1162,22 +1162,22 @@ void parse_parameters (int argc, char *argv[])
 		}
         if (strcmp (argv[i],"-xdsdebug")==0)
 		{
-			debug_mask |= DMT_XDS;
+			debug_mask |= CCX_DMT_XDS;
 			continue;
 		}
         if (strcmp (argv[i],"-parsedebug")==0)
 		{
-			debug_mask |= DMT_PARSE;
+			debug_mask |= CCX_DMT_PARSE;
 			continue;
 		}
         if (strcmp (argv[i],"-parsePAT")==0 || strcmp (argv[i],"-parsepat")==0)
 		{
-			debug_mask |= DMT_PAT;
+			debug_mask |= CCX_DMT_PAT;
 			continue;
 		}
         if (strcmp (argv[i],"-parsePMT")==0 || strcmp (argv[i],"-parsepmt")==0)
 		{
-			debug_mask |= DMT_PMT;
+			debug_mask |= CCX_DMT_PMT;
 			continue;
 		}
         if (strcmp (argv[i],"-investigate_packets")==0)
@@ -1187,12 +1187,12 @@ void parse_parameters (int argc, char *argv[])
 		}
         if (strcmp (argv[i],"-cbraw")==0)
 		{
-			debug_mask |= DMT_CBRAW;
+			debug_mask |= CCX_DMT_CBRAW;
 			continue;
 		}
         if (strcmp (argv[i],"-tverbose")==0)
 		{
-			debug_mask |= DMT_TELETEXT;            
+			debug_mask |= CCX_DMT_TELETEXT;            
 			tlt_config.verbose=1;
 			continue;
 		}		
@@ -1307,7 +1307,7 @@ void parse_parameters (int argc, char *argv[])
 		{
 			tlt_config.page = atoi_hex(argv[i+1]);
 			tlt_config.user_page = tlt_config.page;
-			telext_mode=TXT_IN_USE;
+			telext_mode=CCX_TXT_IN_USE;
 			i++;
 			continue;
 		}		
@@ -1358,12 +1358,12 @@ void parse_parameters (int argc, char *argv[])
 		}
         if (strcmp (argv[i],"-teletext")==0)
 		{
-            telext_mode=TXT_IN_USE;
+            telext_mode=CCX_TXT_IN_USE;
 			continue;
 		}
         if (strcmp (argv[i],"-noteletext")==0)
 		{
-            telext_mode=TXT_FORBIDDEN;
+            telext_mode=CCX_TXT_FORBIDDEN;
 			continue;
 		}
 		/* Network stuff */
@@ -1374,6 +1374,8 @@ void parse_parameters (int argc, char *argv[])
 			{
 				struct hostent *host;
 				*colon = '\0';
+				if (init_sockets())
+					fatal (EXIT_NOT_CLASSIFIED, "Unable to initialize sockets library.\n");
 				host = gethostbyname(argv[i+1]);
 				*colon = ':';
 				if (host == NULL) 
@@ -1394,7 +1396,7 @@ void parse_parameters (int argc, char *argv[])
 				udpaddr = INADDR_ANY;
 				udpport = atoi_hex(argv[i+1]);
 			}
-			input_source=DS_NETWORK;
+			input_source=CCX_DS_NETWORK;
 			i++;
 			continue;
 		}		
