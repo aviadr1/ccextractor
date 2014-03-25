@@ -1,6 +1,6 @@
 #include "ccextractor.h"
 
-unsigned char tspacket[188]; // Current packet
+static unsigned char tspacket[188]; // Current packet
 
 struct ts_payload
 {
@@ -12,27 +12,27 @@ struct ts_payload
 	int transport_error;  // 0 = packet OK, non-zero damaged
 };
 
-struct ts_payload payload;
-unsigned char *last_pat_payload=NULL;
-unsigned last_pat_length = 0;
+static struct ts_payload payload;
+static unsigned char *last_pat_payload=NULL;
+static unsigned last_pat_length = 0;
 
 
-long capbufsize = 20000;
-unsigned char *capbuf = (unsigned char*)malloc(capbufsize);
-long capbuflen = 0; // Bytes read in capbuf
-unsigned char *haup_capbuf = NULL;
-long haup_capbufsize = 0;
-long haup_capbuflen = 0; // Bytes read in haup_capbuf
+static long capbufsize = 20000;
+static unsigned char *capbuf = (unsigned char*)malloc(capbufsize);
+static long capbuflen = 0; // Bytes read in capbuf
+static unsigned char *haup_capbuf = NULL;
+static long haup_capbufsize = 0;
+static long haup_capbuflen = 0; // Bytes read in haup_capbuf
 
-unsigned TS_program_number = 0; // Identifier for current program
-unsigned pmtpid = 0; // PID for Program Map Table
+static unsigned TS_program_number = 0; // Identifier for current program
+static unsigned pmtpid = 0; // PID for Program Map Table
 unsigned autoprogram =0; // Try to find a stream with captions automatically (no -pn needed)
 unsigned cappid = 0; // PID for stream that holds caption information
 unsigned forced_cappid = 0; // If 1, never mess with the selected PID
 int datastreamtype = -1; // User WANTED stream type (i.e. use the stream that has this type)
-unsigned cap_stream_type=CCX_STREAM_TYPE_UNKNOWNSTREAM; // Stream type for cappid
+static unsigned cap_stream_type=CCX_STREAM_TYPE_UNKNOWNSTREAM; // Stream type for cappid
 unsigned forced_streamtype=CCX_STREAM_TYPE_UNKNOWNSTREAM; // User selected (forced) stream type
-unsigned pmt_warning_shown=0; // Only display warning once
+static unsigned pmt_warning_shown=0; // Only display warning once
 
 struct PAT_entry
 {
@@ -57,7 +57,7 @@ static PAT_entry pmt_array[TS_PMT_MAP_SIZE] = { 0 };
 static uint16_t pmt_array_length = 0;
 
 // Descriptions for ts ccx_stream_type
-const char *desc[256];
+static const char *desc[256];
 
 void init_ts_constants(void)
 {
@@ -1047,27 +1047,27 @@ LLONG ts_getmoredata(void)
         // Separate MPEG-2 and H.264 video streams
         if( cap_stream_type == CCX_STREAM_TYPE_VIDEO_MPEG2)
         {
-            bufferdatatype = PES;
+            ccx_bufferdatatype = CCX_PES;
             tstr = "MPG";
         }
         else if( cap_stream_type == CCX_STREAM_TYPE_VIDEO_H264 )
         {
-            bufferdatatype = H264;
+            ccx_bufferdatatype = CCX_H264;
             tstr = "H.264";
         }
 		else if ( cap_stream_type == CCX_STREAM_TYPE_UNKNOWNSTREAM && hauppauge_mode)
 		{
-            bufferdatatype = HAUPPAGE;
+            ccx_bufferdatatype = CCX_HAUPPAGE;
             tstr = "Hauppage";
 		}
 		else if ( cap_stream_type == CCX_STREAM_TYPE_PRIVATE_MPEG2 && telext_mode==CCX_TXT_IN_USE)
 		{
-            bufferdatatype = TELETEXT;
+            ccx_bufferdatatype = CCX_TELETEXT;
             tstr = "Teletext";
 		}
 		else if ( cap_stream_type == CCX_STREAM_TYPE_PRIVATE_MPEG2 && telext_mode==CCX_TXT_FORBIDDEN)
 		{
-            bufferdatatype = PRIVATE_MPEG2_CC;
+            ccx_bufferdatatype = CCX_PRIVATE_MPEG2_CC;
             tstr = "CC in private MPEG packet";
 		}
 		else
@@ -1100,7 +1100,7 @@ LLONG ts_getmoredata(void)
 			inbuf += capbuflen;
 			break;						
 		}
-		if (bufferdatatype == PRIVATE_MPEG2_CC)
+		if (ccx_bufferdatatype == CCX_PRIVATE_MPEG2_CC)
 		{
 			dump (CCX_DMT_GENERIC_NOTICES, capbuf, capbuflen,0, 1);
 			// Bogus data, so we return something

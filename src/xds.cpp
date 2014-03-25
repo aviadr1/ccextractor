@@ -1,22 +1,22 @@
 #include "ccextractor.h"
 
 // Program Identification Number (Start Time) for current program
-int current_xds_min=-1;
-int current_xds_hour=-1;
-int current_xds_date=-1;
-int current_xds_month=-1;
-int current_program_type_reported=0; // No.
-int xds_start_time_shown=0;
-int xds_program_length_shown=0;
-int xds_program_type_shown=0;
-char xds_program_description[8][33];
+static int current_xds_min=-1;
+static int current_xds_hour=-1;
+static int current_xds_date=-1;
+static int current_xds_month=-1;
+static int current_program_type_reported=0; // No.
+static int xds_start_time_shown=0;
+static int xds_program_length_shown=0;
+static int xds_program_type_shown=0;
+static char xds_program_description[8][33];
 
-char current_xds_network_name[33]; 
-char current_xds_program_name[33]; 
-char current_xds_call_letters[7];
-char current_xds_program_type[33];
+static char current_xds_network_name[33]; 
+static char current_xds_program_name[33]; 
+static char current_xds_call_letters[7];
+static char current_xds_program_type[33];
 
-const char *XDSclasses[]=
+static const char *XDSclasses[]=
 {
 	"Current",
 	"Future",
@@ -28,7 +28,7 @@ const char *XDSclasses[]=
 	"End"
 };
 
-const char *XDSclasses_short[]=
+static const char *XDSclasses_short[]=
 {
 	"CUR",
 	"FUT",
@@ -40,7 +40,7 @@ const char *XDSclasses_short[]=
 	"END"
 };
 
-const char *XDSProgramTypes[]=
+static const char *XDSProgramTypes[]=
 {
 	"Education","Entertainment", "Movie", "News", "Religious",
 	"Sports", "Other", "Action","Advertisement", "Animated",
@@ -111,11 +111,11 @@ struct xds_buffer
 	unsigned char used_bytes;
 } xds_buffers[NUM_XDS_BUFFERS]; 
 
-int cur_xds_buffer_idx=-1;
-int cur_xds_packet_class=-1;
-unsigned char *cur_xds_payload;
-int cur_xds_payload_length;
-int cur_xds_packet_type;
+static int cur_xds_buffer_idx=-1;
+static int cur_xds_packet_class=-1;
+static unsigned char *cur_xds_payload;
+static int cur_xds_payload_length;
+static int cur_xds_packet_type;
 
 
 void xds_init()

@@ -522,7 +522,7 @@ LLONG asf_getmoredata(void)
         // it is not reliable.
 
         // Now decide where we are going to expect the captions
-        bufferdatatype = PES; // Except for NTSC captions
+        ccx_bufferdatatype = CCX_PES; // Except for NTSC captions
         if ( CaptionStreamNumber > 0
              && (CaptionStreamStyle == 1 ||
                  (CaptionStreamStyle == 2 && !wtvconvertfix)) )
@@ -535,7 +535,7 @@ LLONG asf_getmoredata(void)
         {
             //if (debug_parse)
             mprint("\nNTSC captions in stream #%d\n\n", CaptionStreamNumber);
-            bufferdatatype = RAW;
+            ccx_bufferdatatype = CCX_RAW;
             DecodeStreamNumber = CaptionStreamNumber;
         }
         else if ( CaptionStreamNumber > 0 && CaptionStreamStyle == 2 )

@@ -4,8 +4,6 @@ static const int     rowdata[] = {11,-1,1,2,3,4,12,13,14,15,5,6,7,8,9,10};
 // Relationship between the first PAC byte and the row number
 int in_xds_mode=0; 
 
-extern int ts_headers_total;
-
 #define INITIAL_ENC_BUFFER_CAPACITY		2048
 
 unsigned char *enc_buffer=NULL; // Generic general purpose buffer

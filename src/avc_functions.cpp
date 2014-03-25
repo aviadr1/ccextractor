@@ -18,7 +18,7 @@ static unsigned char cc_count;
 // buffer to hold cc data
 static unsigned char *cc_data = (unsigned char*)malloc(1024);
 static long cc_databufsize = 1024;
-int cc_buffer_saved=1; // Was the CC buffer saved after it was last updated?
+static int cc_buffer_saved=1; // Was the CC buffer saved after it was last updated?
 
 static int got_seq_para=0;
 static unsigned nal_ref_idc;
@@ -887,8 +887,9 @@ void slice_header (unsigned char *heabuf, unsigned char *heaend, int nal_unit_ty
 
     // Sometimes two P-slices follow each other, see garbled_dishHD.mpg,
     // in this case we only treat the first as a reference pic
-    if (isref && frames_since_last_gop == 1)
-    {
+    if (isref && frames_since_last_gop <= 3) // Used to be == 1, but the sample file
+    { // 2014 SugarHouse Casino Mummers Parade Fancy Brigades_new.ts was garbled
+		// Probably doing a proper PTS sort would be a better solution.
         isref = 0;
         dbg_print(CCX_DMT_TIME, "Ignoring this reference pic.\n");        
     }

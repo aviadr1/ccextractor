@@ -5,9 +5,9 @@
 
 // #define DEBUG_708_PACKETS   // Already working. 
 
-unsigned char current_packet[MAX_708_PACKET_LENGTH]; // Length according to EIA-708B, part 5
-int current_packet_length=0;
-int last_seq=-1; // -1 -> No last sequence yet
+static unsigned char current_packet[MAX_708_PACKET_LENGTH]; // Length according to EIA-708B, part 5
+static int current_packet_length=0;
+static int last_seq=-1; // -1 -> No last sequence yet
 
 void clearTV (cc708_service_decoder *decoder, int buffer);
 

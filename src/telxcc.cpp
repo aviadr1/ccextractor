@@ -114,14 +114,14 @@ typedef enum {
 	TRANSMISSION_MODE_SERIAL = 1
 } transmission_mode_t;
 
-const char* TTXT_COLOURS[8] = {
+static const char* TTXT_COLOURS[8] = {
 	//black,   red,       green,     yellow,    blue,      magenta,   cyan,      white
 	"#000000", "#ff0000", "#00ff00", "#ffff00", "#0000ff", "#ff00ff", "#00ffff", "#ffffff"
 };
 
 #define MAX_TLT_PAGES 1000
 
-short int seen_sub_page[MAX_TLT_PAGES];
+static short int seen_sub_page[MAX_TLT_PAGES];
 
 // 1-byte alignment; just to be sure, this struct is being used for explicit type conversion
 // FIXME: remove explicit type conversion from buffer to structs
@@ -149,7 +149,7 @@ struct ccx_s_teletext_config tlt_config = { NO, 0, 0, 0, NO, NO, 0 };
 #define VERBOSE_ONLY if (tlt_config.verbose == YES)
 
 // application states -- flags for notices that should be printed only once
-struct s_states {
+static struct s_states {
 	uint8_t programme_info_processed;
 	uint8_t pts_initialized;
 } states = { NO, NO };
@@ -158,19 +158,19 @@ struct s_states {
 uint32_t tlt_frames_produced = 0;
 
 // subtitle type pages bitmap, 2048 bits = 2048 possible pages in teletext (excl. subpages)
-uint8_t cc_map[256] = { 0 };
+static uint8_t cc_map[256] = { 0 };
 
 // last timestamp computed
-uint64_t last_timestamp = 0;
+static uint64_t last_timestamp = 0;
 
 // working teletext page buffer
 teletext_page_t page_buffer = { 0 };
 
 // teletext transmission mode
-transmission_mode_t transmission_mode = TRANSMISSION_MODE_SERIAL;
+static transmission_mode_t transmission_mode = TRANSMISSION_MODE_SERIAL;
 
 // flag indicating if incoming data should be processed or ignored
-uint8_t receiving_data = NO;
+static uint8_t receiving_data = NO;
 
 // current charset (charset can be -- and always is -- changed during transmission)
 struct s_primary_charset {
@@ -198,13 +198,13 @@ static uint16_t pmt_map_count = 0;
 
 // TTXT streams table
 #define TS_PMT_TTXT_MAP_SIZE 128
-uint16_t pmt_ttxt_map[TS_PMT_MAP_SIZE] = { 0 };
-uint16_t pmt_ttxt_map_count = 0;
+static uint16_t pmt_ttxt_map[TS_PMT_MAP_SIZE] = { 0 };
+static uint16_t pmt_ttxt_map_count = 0;
 
 // FYI, packet counter
 uint32_t tlt_packet_counter = 0;
 
-int telxcc_inited=0;
+static int telxcc_inited=0;
 
 #define array_length(a) (sizeof(a)/sizeof(a[0]))
 
@@ -216,16 +216,23 @@ int telxcc_inited=0;
 
 // Current and previous page buffers. This is the output written to file when
 // the time comes.
-char *page_buffer_prev=NULL,*page_buffer_cur=NULL;
-unsigned page_buffer_cur_size=0, page_buffer_cur_used=0;
-unsigned page_buffer_prev_size=0, page_buffer_prev_used=0;
+static char *page_buffer_prev=NULL;
+static char *page_buffer_cur=NULL;
+static unsigned page_buffer_cur_size=0;
+static unsigned page_buffer_cur_used=0;
+static unsigned page_buffer_prev_size=0;
+static unsigned page_buffer_prev_used=0;
 // Current and previous page compare strings. This is plain text (no colors, 
 // tags, etc) in UCS2 (fixed length), so we can compare easily. 
-uint64_t *ucs2_buffer_prev=NULL,*ucs2_buffer_cur=NULL;
-unsigned ucs2_buffer_cur_size=0, ucs2_buffer_cur_used=0;
-unsigned ucs2_buffer_prev_size=0, ucs2_buffer_prev_used=0;
+static uint64_t *ucs2_buffer_prev=NULL;
+static uint64_t *ucs2_buffer_cur=NULL;
+static unsigned ucs2_buffer_cur_size=0;
+static unsigned ucs2_buffer_cur_used=0;
+static unsigned ucs2_buffer_prev_size=0;
+static unsigned ucs2_buffer_prev_used=0;
 // Buffer timestamp
-uint64_t prev_hide_timestamp, prev_show_timestamp;
+static uint64_t prev_hide_timestamp;
+static uint64_t prev_show_timestamp;
 
 void page_buffer_add_string (const char *s)
 {

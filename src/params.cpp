@@ -1,18 +1,18 @@
 #include "ccextractor.h"
 
-int inputfile_capacity=0; 
-int spell_builtin_added=0; // so we don't do it twice
+static int inputfile_capacity=0; 
+static int spell_builtin_added=0; // so we don't do it twice
 
-const char *DEF_VAL_STARTCREDITSNOTBEFORE="0";
-const char *DEF_VAL_STARTCREDITSNOTAFTER="5:00"; // To catch the theme after the teaser in TV shows
-const char *DEF_VAL_STARTCREDITSFORATLEAST="2";
-const char *DEF_VAL_STARTCREDITSFORATMOST="5";
-const char *DEF_VAL_ENDCREDITSFORATLEAST="2";
-const char *DEF_VAL_ENDCREDITSFORATMOST="5";
+static const char *DEF_VAL_STARTCREDITSNOTBEFORE="0";
+static const char *DEF_VAL_STARTCREDITSNOTAFTER="5:00"; // To catch the theme after the teaser in TV shows
+static const char *DEF_VAL_STARTCREDITSFORATLEAST="2";
+static const char *DEF_VAL_STARTCREDITSFORATMOST="5";
+static const char *DEF_VAL_ENDCREDITSFORATLEAST="2";
+static const char *DEF_VAL_ENDCREDITSFORATMOST="5";
 
 // Some basic English words, so user-defined doesn't have to
 // include the common stuff
-const char *spell_builtin[]=
+static const char *spell_builtin[]=
 {
     "I", "I'd",	"I've",	"I'd", "I'll",
     "January","February","March","April", // May skipped intentionally
@@ -23,7 +23,7 @@ const char *spell_builtin[]=
     NULL
 }; 
 
-int stringztoms (const char *s, boundary_time *bt)
+int stringztoms (const char *s, ccx_boundary_time *bt)
 {
     unsigned ss=0, mm=0, hh=0;
     int value=-1;
@@ -296,23 +296,23 @@ void set_input_format (const char *format)
     while (*format=='-')
         format++;
     if (strcmp (format,"es")==0) // Does this actually do anything?
-        auto_stream = SM_ELEMENTARY_OR_NOT_FOUND;
+        auto_stream = CCX_SM_ELEMENTARY_OR_NOT_FOUND;
     else if (strcmp (format,"ts")==0)
-        auto_stream = SM_TRANSPORT;
+        auto_stream = CCX_SM_TRANSPORT;
     else if (strcmp (format,"ps")==0 || strcmp (format,"nots")==0)
-        auto_stream = SM_PROGRAM;
+        auto_stream = CCX_SM_PROGRAM;
     else if (strcmp (format,"asf")==0 || strcmp (format,"dvr-ms")==0)
-        auto_stream = SM_ASF;
+        auto_stream = CCX_SM_ASF;
     else if (strcmp (format,"wtv")==0)
-        auto_stream = SM_WTV;
+        auto_stream = CCX_SM_WTV;
     else if (strcmp (format,"raw")==0)
-        auto_stream = SM_MCPOODLESRAW;
+        auto_stream = CCX_SM_MCPOODLESRAW;
     else if (strcmp (format,"bin")==0)
-        auto_stream = SM_RCWT;
+        auto_stream = CCX_SM_RCWT;
     else if (strcmp (format,"mp4")==0)
-        auto_stream = SM_MP4;
+        auto_stream = CCX_SM_MP4;
     else if (strcmp (format,"hex")==0)
-        auto_stream = SM_HEX_DUMP;
+        auto_stream = CCX_SM_HEX_DUMP;
     else
         fatal (EXIT_MALFORMED_PARAMETER, "Unknown input file format: %s\n", format);
 }

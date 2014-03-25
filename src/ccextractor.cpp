@@ -96,8 +96,8 @@ int buffer_input = 1; // In Windows buffering seems to help
 #else
 int buffer_input = 0; // In linux, not so much.
 #endif
-stream_mode_enum stream_mode = SM_ELEMENTARY_OR_NOT_FOUND; // Data parse mode: 0=elementary, 1=transport, 2=program stream, 3=ASF container
-stream_mode_enum auto_stream = SM_AUTODETECT;
+ccx_stream_mode_enum stream_mode = CCX_SM_ELEMENTARY_OR_NOT_FOUND; // Data parse mode: 0=elementary, 1=transport, 2=program stream, 3=ASF container
+ccx_stream_mode_enum auto_stream = CCX_SM_AUTODETECT;
 int use_gop_as_pts = 0; // Use GOP instead of PTS timing (0=do as needed, 1=always, -1=never)
 int fix_padding = 0; // Replace 0000 with 8080 in HDTV (needed for some cards)
 int rawmode = 0; // Broadcast or DVD
@@ -113,10 +113,10 @@ int nosync=0; // Disable syncing
 int fullbin=0; // Disable pruning of padding cc blocks
 LLONG subs_delay=0; // ms to delay (or advance) subs
 int trim_subs=0; // "    Remove spaces at sides?    "
-struct boundary_time extraction_start, extraction_end; // Segment we actually process
-struct boundary_time startcreditsnotbefore, startcreditsnotafter; // Where to insert start credits, if possible
-struct boundary_time startcreditsforatleast, startcreditsforatmost; // How long to display them?
-struct boundary_time endcreditsforatleast, endcreditsforatmost;
+struct ccx_boundary_time extraction_start, extraction_end; // Segment we actually process
+struct ccx_boundary_time startcreditsnotbefore, startcreditsnotafter; // Where to insert start credits, if possible
+struct ccx_boundary_time startcreditsforatleast, startcreditsforatmost; // How long to display them?
+struct ccx_boundary_time endcreditsforatleast, endcreditsforatmost;
 int startcredits_displayed=0, end_credits_displayed=0;
 LLONG last_displayed_subs_ms=0; // When did the last subs end?
 LLONG screens_to_process=-1; // How many screenfuls we want?
@@ -137,9 +137,9 @@ int cea708services[63]; // [] -> 1 for services to be processed
 
 int nofontcolor=0; // 1 = don't put <font color> tags 
 int notypesetting=0; // 1 = Don't put <i>, <u>, etc typesetting tags
-output_format write_format=CCX_OF_SRT; // 0=Raw, 1=srt, 2=SMI
-output_date_format date_format=ODF_NONE; 
-encoding_type encoding = CCX_ENC_UTF_8;
+ccx_output_format write_format=CCX_OF_SRT; // 0=Raw, 1=srt, 2=SMI
+ccx_output_date_format date_format=ODF_NONE; 
+ccx_encoding_type encoding = CCX_ENC_UTF_8;
 int usepicorder = 0; // Force the use of pic_order_cnt_lsb in AVC/H.264 data streams
 int auto_myth = 2; // Use myth-tv mpeg code? 0=no, 1=yes, 2=auto
 int wtvconvertfix = 0; // Fix broken Windows 7 conversion
@@ -304,11 +304,11 @@ int main(int argc, char *argv[])
 		tlt_config.page = ((tlt_config.page / 100) << 8) | (((tlt_config.page / 10) % 10) << 4) | (tlt_config.page % 10);
 	}
 
-    if (auto_stream==SM_MCPOODLESRAW && write_format==CCX_OF_RAW)
+    if (auto_stream==CCX_SM_MCPOODLESRAW && write_format==CCX_OF_RAW)
     {
         fatal (EXIT_INCOMPATIBLE_PARAMETERS, "-in=raw can only be used if the output is a subtitle file.\n");
     }
-    if (auto_stream==SM_RCWT && write_format==CCX_OF_RCWT && output_filename==NULL)
+    if (auto_stream==CCX_SM_RCWT && write_format==CCX_OF_RCWT && output_filename==NULL)
     {
         fatal (EXIT_INCOMPATIBLE_PARAMETERS,
                "CCExtractor's binary format can only be used simultaneously for input and\noutput if the output file name is specified given with -o.\n");
@@ -530,40 +530,40 @@ int main(int argc, char *argv[])
     {
         prepare_for_new_file();
 
-        if (auto_stream == SM_AUTODETECT)
+        if (auto_stream == CCX_SM_AUTODETECT)
         {
             detect_stream_type();            
             switch (stream_mode)
             {
-                case SM_ELEMENTARY_OR_NOT_FOUND:
+                case CCX_SM_ELEMENTARY_OR_NOT_FOUND:
                     mprint ("\rFile seems to be an elementary stream, enabling ES mode\n");
                     break;
-                case SM_TRANSPORT:
+                case CCX_SM_TRANSPORT:
                     mprint ("\rFile seems to be a transport stream, enabling TS mode\n");
                     break;
-                case SM_PROGRAM:
+                case CCX_SM_PROGRAM:
                     mprint ("\rFile seems to be a program stream, enabling PS mode\n");
                     break;
-                case SM_ASF:
+                case CCX_SM_ASF:
                     mprint ("\rFile seems to be an ASF, enabling DVR-MS mode\n");
                     break;
-                case SM_WTV:
+                case CCX_SM_WTV:
                     mprint ("\rFile seems to be an WTV, enabling WTV mode\n");
                     break;
-                case SM_MCPOODLESRAW:
+                case CCX_SM_MCPOODLESRAW:
                     mprint ("\rFile seems to be McPoodle raw data\n");
                     break;
-                case SM_RCWT:
+                case CCX_SM_RCWT:
                     mprint ("\rFile seems to be a raw caption with time data\n");
                     break;
-				case SM_MP4:
+				case CCX_SM_MP4:
                     mprint ("\rFile seems to be a MP4\n");
                     break;
-				case SM_HEX_DUMP:
+				case CCX_SM_HEX_DUMP:
                     mprint ("\rFile seems to be an hexadecimal dump\n");					
                     break;
-                case SM_MYTH:
-                case SM_AUTODETECT:
+                case CCX_SM_MYTH:
+                case CCX_SM_AUTODETECT:
                     fatal(EXIT_BUG_BUG, "Cannot be reached!");
                     break;
             }
@@ -585,18 +585,18 @@ int main(int argc, char *argv[])
                 break;
             case 1:
                 // Force stream mode to myth
-                stream_mode=SM_MYTH;
+                stream_mode=CCX_SM_MYTH;
                 break;
             case 2:
                 // autodetect myth files, but only if it does not conflict with
                 // the current stream mode
                 switch (stream_mode)
                 {
-                    case SM_ELEMENTARY_OR_NOT_FOUND:
-                    case SM_PROGRAM:
+                    case CCX_SM_ELEMENTARY_OR_NOT_FOUND:
+                    case CCX_SM_PROGRAM:
                         if ( detect_myth() )
                         {
-                            stream_mode=SM_MYTH;
+                            stream_mode=CCX_SM_MYTH;
                         }
                         break;
                     default:
@@ -608,41 +608,41 @@ int main(int argc, char *argv[])
                 
         switch (stream_mode)
         {
-            case SM_ELEMENTARY_OR_NOT_FOUND:
+            case CCX_SM_ELEMENTARY_OR_NOT_FOUND:
 				if (!use_gop_as_pts) // If !0 then the user selected something
 					use_gop_as_pts = 1; // Force GOP timing for ES
-            case SM_TRANSPORT:
-            case SM_PROGRAM:
-            case SM_ASF:
-            case SM_WTV:
+            case CCX_SM_TRANSPORT:
+            case CCX_SM_PROGRAM:
+            case CCX_SM_ASF:
+            case CCX_SM_WTV:
 				if (!use_gop_as_pts) // If !0 then the user selected something
 					use_gop_as_pts = 0; 
                 mprint ("\rAnalyzing data in general mode\n");
                 general_loop();
                 break;
-            case SM_MCPOODLESRAW:
+            case CCX_SM_MCPOODLESRAW:
                 mprint ("\rAnalyzing data in McPoodle raw mode\n");
                 raw_loop();
                 break;
-            case SM_RCWT:
+            case CCX_SM_RCWT:
                 mprint ("\rAnalyzing data in CCExtractor's binary format\n");
                 rcwt_loop();
                 break;
-            case SM_MYTH:
+            case CCX_SM_MYTH:
                 mprint ("\rAnalyzing data in MythTV mode\n");
                 show_myth_banner = 1;
                 myth_loop();
 				break;
-			case SM_MP4:				
+			case CCX_SM_MP4:				
                 mprint ("\rAnalyzing data with GPAC (MP4 library)\n");
 				close_input_file(); // No need to have it open. GPAC will do it for us
 				processmp4 (inputfile[0]);										
 				break;
-			case SM_HEX_DUMP:
+			case CCX_SM_HEX_DUMP:
 				close_input_file(); // processhex will open it in text mode
 				processhex (inputfile[0]);										
 				break;
-            case SM_AUTODETECT:
+            case CCX_SM_AUTODETECT:
                 fatal(EXIT_BUG_BUG, "Cannot be reached!");
                 break;
         }
@@ -699,7 +699,7 @@ int main(int argc, char *argv[])
                                   - min_pts/(MPEG_CLOCK_FREQ/1000) + fts_offset ));
         }
         // dvr-ms files have invalid GOPs
-        if (gop_time.inited && first_gop_time.inited && stream_mode != SM_ASF)
+        if (gop_time.inited && first_gop_time.inited && stream_mode != CCX_SM_ASF)
         {
             mprint ("\nInitial GOP time:       %s\n",
                 print_mstime(first_gop_time.ms));

@@ -7,22 +7,22 @@
 // enough space.
 //#define SORTBUF (2*MAXBFRAMES+1) - from ccextractor.h
 // B-Frames can be (temporally) before or after the anchor
-int cc_data_count[SORTBUF];
+static int cc_data_count[SORTBUF];
 // Store fts;
-LLONG cc_fts[SORTBUF];
+static LLONG cc_fts[SORTBUF];
 // Store HD CC packets
-unsigned char cc_data_pkts[SORTBUF][10*31*3+1]; // *10, because MP4 seems to have different limits
+static unsigned char cc_data_pkts[SORTBUF][10*31*3+1]; // *10, because MP4 seems to have different limits
 
 // Set to true if data is buffered
 int has_ccdata_buffered = 0;
 // The sequence number of the current anchor frame.  All currently read
 // B-Frames belong to this I- or P-frame.
-int anchor_seq_number = -1;
+static int anchor_seq_number = -1;
 
 // Remember the current field for 608 decoding
 int current_field=1; // 1 = field 1, 2 = field 2, 3 = 708
 
-extern int in_xds_mode ; // Stolen from 608.cpp. We need this for debug
+static int in_xds_mode ; // Stolen from 608.cpp. We need this for debug
 
 void init_hdcc (void)
 {
@@ -72,7 +72,7 @@ void store_hdcc(unsigned char *cc_data, int cc_count, int sequence_number, LLONG
 			// Changed by CFS to concat, i.e. don't assume there's no data already for this seq_index.
 			// Needed at least for MP4 samples. // TODO: make sure we don't overflow
 			cc_fts[seq_index] = current_fts_now; // CFS: Maybe do even if there's no data?
-			if (stream_mode!=SM_MP4) // CFS: Very ugly hack, but looks like overwriting is needed for at least some ES
+			if (stream_mode!=CCX_SM_MP4) // CFS: Very ugly hack, but looks like overwriting is needed for at least some ES
 				cc_data_count[seq_index]  = 0;
 			memcpy(cc_data_pkts[seq_index]+cc_data_count[seq_index]*3, cc_data, cc_count*3+1);
 		}
@@ -109,7 +109,7 @@ void process_hdcc (void)
     for (int seq=0; seq<SORTBUF; seq++)
     {
         // We rely on this.
-        if (bufferdatatype == H264)
+        if (ccx_bufferdatatype == CCX_H264)
             reset_cb = 1;
 
 	// If fts_now is unchanged we rely on cc block counting,

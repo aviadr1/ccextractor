@@ -30,34 +30,34 @@ void params_dump(void)
     mprint ("[Stream mode: ");
     switch (auto_stream)
     {
-        case SM_ELEMENTARY_OR_NOT_FOUND:
+        case CCX_SM_ELEMENTARY_OR_NOT_FOUND:
             mprint ("Elementary");
             break;
-        case SM_TRANSPORT:
+        case CCX_SM_TRANSPORT:
             mprint ("Transport");
             break;
-        case SM_PROGRAM:
+        case CCX_SM_PROGRAM:
             mprint ("Program");
             break;
-        case SM_ASF:
+        case CCX_SM_ASF:
             mprint ("DVR-MS");
             break;
-        case SM_WTV:
+        case CCX_SM_WTV:
             mprint ("Windows Television (WTV)");
             break;
-        case SM_MCPOODLESRAW:
+        case CCX_SM_MCPOODLESRAW:
             mprint ("McPoodle's raw");
             break;
-        case SM_AUTODETECT:
+        case CCX_SM_AUTODETECT:
             mprint ("Autodetect");
             break;
-		case SM_RCWT:
+		case CCX_SM_RCWT:
 			mprint ("BIN");
 			break;
-		case SM_MP4:
+		case CCX_SM_MP4:
 			mprint ("MP4");
 			break;
-		case SM_HEX_DUMP:
+		case CCX_SM_HEX_DUMP:
 			mprint ("Hex");
 			break;
         default:

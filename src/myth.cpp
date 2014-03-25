@@ -13,10 +13,8 @@ For now, integration with ccextractor is a quick hack. It could get better with 
 #include <stdio.h>
 #include <fcntl.h>
 
-extern LLONG result;
-
-unsigned int header_state;
-unsigned char psm_es_type[256];
+static unsigned int header_state;
+static unsigned char psm_es_type[256];
 int cc608_parity_table[256];
 
 // LLONG processed_ccblocks = 0;
@@ -283,7 +281,7 @@ typedef struct AVPacket {
     int    type;
 } AVPacket;
 
-AVPacket av;
+static AVPacket av;
 
 int get_be16()
 {

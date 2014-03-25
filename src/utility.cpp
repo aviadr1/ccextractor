@@ -165,7 +165,7 @@ void mprint (const char *fmt, ...)
 		return;    
 	activity_header(); // Brag about writing it :-)
     va_start(args, fmt);	
-	if (messages_target==MESSAGES_STDOUT)
+	if (messages_target==CCX_MESSAGES_STDOUT)
 	{
 		vfprintf(stdout, fmt, args);
 		fflush (stdout);
@@ -189,7 +189,7 @@ void dbg_print(LLONG mask, const char *fmt, ...)
     if(mask & t)
 	{
 	    va_start(args, fmt);
-		if (messages_target==MESSAGES_STDOUT)
+		if (messages_target==CCX_MESSAGES_STDOUT)
 		{
 			vfprintf(stdout, fmt, args);
 			fflush (stdout);
@@ -214,7 +214,7 @@ void dvprint(const char *fmt, ...)
 		return;
 
     va_start(args, fmt);
-	if (messages_target==MESSAGES_STDOUT)
+	if (messages_target==CCX_MESSAGES_STDOUT)
 	{
 		vfprintf(stdout, fmt, args);
 		fflush (stdout);
@@ -255,7 +255,7 @@ void dump (LLONG mask, unsigned char *start, int l, unsigned long abs_start, uns
     }
 }
 
-void init_boundary_time (boundary_time *bt)
+void init_boundary_time (ccx_boundary_time *bt)
 {
     bt->hh=0;
     bt->mm=0;

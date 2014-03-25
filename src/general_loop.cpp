@@ -15,7 +15,7 @@ extern long num_jump_in_frames;
 extern long num_unexpected_sei_length;
 
 /* General video information */
-unsigned current_hor_size = 0;
+ unsigned current_hor_size = 0;
 unsigned current_vert_size = 0;
 unsigned current_aspect_ratio = 0;
 unsigned current_frame_rate = 4; // Assume standard fps
@@ -25,18 +25,18 @@ LLONG result; // Number of bytes read/skipped in last read operation
 int end_of_file=0; // End of file?
 
 
-const unsigned char DO_NOTHING[] = {0x80, 0x80};
+const static unsigned char DO_NOTHING[] = {0x80, 0x80};
 LLONG inbuf = 0; // Number of bytes loaded in buffer 
-int bufferdatatype = PES; // Can be RAW, PES, H264 or Hauppage
+int ccx_bufferdatatype = CCX_PES; // Can be RAW, PES, H264 or Hauppage
 
 int current_tref = 0; // Store temporal reference of current frame
-int current_picture_coding_type = RESET_OR_UNKNOWN;
+ccx_frame_type current_picture_coding_type = CCX_FRAME_TYPE_RESET_OR_UNKNOWN;
 
 // Remember if the last header was valid. Used to suppress too much output
 // and the expected unrecognized first header for TiVo files.
 int strangeheader=0;
 
-int non_compliant_DVD = 0; // Found extra captions in DVDs?
+static int non_compliant_DVD = 0; // Found extra captions in DVDs?
 
 unsigned char *filebuffer;
 LLONG filebuffer_start; // Position of buffer start relative to file
@@ -533,7 +533,7 @@ void general_loop(void)
     inbuf = 0; // No data yet
 
     end_of_file = 0;
-    current_picture_coding_type = 0;
+    current_picture_coding_type = CCX_FRAME_TYPE_RESET_OR_UNKNOWN;
 
     while (!end_of_file && !processed_enough) 
     {
@@ -552,19 +552,19 @@ void general_loop(void)
         position_sanity_check();
         switch (stream_mode)
         {
-            case SM_ELEMENTARY_OR_NOT_FOUND:
+            case CCX_SM_ELEMENTARY_OR_NOT_FOUND:
                 i = general_getmoredata();
                 break;
-            case SM_TRANSPORT:
+            case CCX_SM_TRANSPORT:
                 i = ts_getmoredata();
                 break;
-            case SM_PROGRAM:
+            case CCX_SM_PROGRAM:
                 i = ps_getmoredata();
                 break;
-            case SM_ASF:
+            case CCX_SM_ASF:
                 i = asf_getmoredata();
                 break;
-            case SM_WTV:
+            case CCX_SM_WTV:
                 i = wtv_getmoredata();
                 break;
             default:
@@ -597,21 +597,21 @@ void general_loop(void)
 			if (pts_set)
 				set_fts(); // Try to fix timing from TS data
 		}
-        else if (bufferdatatype == PES)
+        else if (ccx_bufferdatatype == CCX_PES)
         {
             got = process_m2v (buffer, inbuf);
         }
-		else if (bufferdatatype == TELETEXT)
+		else if (ccx_bufferdatatype == CCX_TELETEXT)
 		{
 			// Dispatch to Petr Kutalek 's telxcc.
 			tlt_process_pes_packet (buffer, (uint16_t) inbuf);
 			got = inbuf; 
 		}
-		else if (bufferdatatype == PRIVATE_MPEG2_CC)
+		else if (ccx_bufferdatatype == CCX_PRIVATE_MPEG2_CC)
 		{
 			got = inbuf; // Do nothing. Still don't know how to process it
 		}
-        else if (bufferdatatype == RAW) // Raw two byte 608 data from DVR-MS/ASF
+        else if (ccx_bufferdatatype == CCX_RAW) // Raw two byte 608 data from DVR-MS/ASF
         {
             // The asf_getmoredata() loop sets current_pts when possible
             if (pts_set == 0)
@@ -649,7 +649,7 @@ void general_loop(void)
 
             got = process_raw();
         }
-        else if (bufferdatatype == H264) // H.264 data from TS file
+        else if (ccx_bufferdatatype == CCX_H264) // H.264 data from TS file
         {
             got = process_avc(buffer, inbuf);
         }
