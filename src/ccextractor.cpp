@@ -9,6 +9,14 @@ License: GPL 2.0
 
 void xds_cea608_test();
 
+struct ccx_context_t {
+};
+
+void ccx_init_context(ccx_context_t* ctx)
+{
+
+}
+
 extern unsigned char *filebuffer;
 extern int bytesinbuffer; // Number of bytes we actually have on buffer
 
@@ -205,7 +213,12 @@ LLONG process_raw_with_field (void);
 
 int main(int argc, char *argv[])
 {
+    ccx_context_t ctx_holder;
+    ccx_context_t* ctx;
     char *c;
+
+    ctx = &ctx_holder;
+    ccx_init_context(ctx);
 
     // Initialize some constants
     init_ts_constants();
