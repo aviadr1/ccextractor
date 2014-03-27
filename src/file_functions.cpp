@@ -41,7 +41,7 @@ LLONG gettotalfilessize (void) // -1 if one or more files failed to open
     return ts;
 }
 
-void prepare_for_new_file (void)
+void prepare_for_new_file (ccx_context_t* ctx)
 {
     // Init per file variables
     min_pts=0x01FFFFFFFFLL; // 33 bit
@@ -73,7 +73,7 @@ void prepare_for_new_file (void)
     pts_big_change=0;
     startbytes_pos=0;
     startbytes_avail=0;
-    init_file_buffer();
+    init_file_buffer(&ctx->filebuffer);
     anchor_hdcc(-1);
     firstcall = 1;
 }
@@ -227,7 +227,7 @@ void position_sanity_check ()
     if (in!=-1)
     {
         LLONG realpos=LSEEK (in,0,SEEK_CUR);
-        if (realpos!=past-filebuffer_pos+bytesinbuffer)
+        if (realpos!=past-ctx->filebuffer.pos+ctx->filebuffer.bytesinbuffer)
         {
             fatal (EXIT_BUG_BUG, "Position desync, THIS IS A BUG. Real pos =%lld, past=%lld.\n",realpos,past);
         }
@@ -236,42 +236,42 @@ void position_sanity_check ()
 }
 
 
-int init_file_buffer(void)
+int init_file_buffer(ccx_context_t::filebuffer_t* fb)
 {
-    filebuffer_start=0;
-    filebuffer_pos=0;    
-    if (filebuffer==NULL)
+    fb->start=0;
+    fb->pos=0;    
+    if (fb->p==NULL)
     {
-        filebuffer=(unsigned char *) malloc (FILEBUFFERSIZE);
-        bytesinbuffer=0;
+        fb->p=(unsigned char *) malloc (FILEBUFFERSIZE);
+        fb->bytesinbuffer=0;
     }
-    if (filebuffer==NULL) 
+    if (fb->p==NULL) 
     {
         fatal (EXIT_NOT_ENOUGH_MEMORY, "Not enough memory\n");        
     }
     return 0;
 }
 
-void buffered_seek (int offset)
+void buffered_seek (ccx_context_t::filebuffer_t* fb, int offset)
 {
     position_sanity_check();
     if (offset<0)
     {
-        filebuffer_pos+=offset;
-        if (filebuffer_pos<0)
+        fb->pos+=offset;
+        if (fb->pos<0)
         {
             // We got into the start buffer (hopefully)
-            if (startbytes_pos+filebuffer_pos < 0)
+            if (startbytes_pos+fb->pos < 0)
             {
                 fatal (EXIT_BUG_BUG, "PANIC: Attempt to seek before buffer start, this is a bug!");
             }
-            startbytes_pos+=filebuffer_pos;
-            filebuffer_pos=0;
+            startbytes_pos+=fb->pos;
+            fb->pos=0;
         }
     }
     else
     {
-        buffered_read_opt (NULL, offset);
+        result = buffered_read_opt (fb, NULL, offset);
         position_sanity_check();
     }
 }
@@ -298,42 +298,42 @@ void sleepandchecktimeout (time_t start)
         sleep_secs(1);
 }
 
-void return_to_buffer (unsigned char *buffer, unsigned int bytes)
+void return_to_buffer (ccx_context_t::filebuffer_t* fb, unsigned char *buffer, unsigned int bytes)
 {
-	if (bytes == filebuffer_pos)
+	if (bytes == fb->pos)
 	{
 		// Usually we're just going back in the buffer and memcpy would be 
 		// unnecessary, but we do it in case we intentionally messed with the
 		// buffer
-		memcpy (filebuffer, buffer, bytes);
-		filebuffer_pos=0;
+		memcpy (fb->p, buffer, bytes);
+		fb->pos=0;
 		return;
 	}
-	if (filebuffer_pos>0) // Discard old bytes, because we may need the space
+	if (fb->pos>0) // Discard old bytes, because we may need the space
 	{
 		// Non optimal since data is moved later again but we don't care since
 		// we're never here in ccextractor.
-		memmove (filebuffer,filebuffer+filebuffer_pos,bytesinbuffer-filebuffer_pos);
-		bytesinbuffer-=filebuffer_pos;
-		bytesinbuffer=0; 
-		filebuffer_pos=0;
+		memmove (fb->p,fb->p+fb->pos,fb->bytesinbuffer-fb->pos);
+		fb->bytesinbuffer-=fb->pos;
+		fb->bytesinbuffer=0; 
+		fb->pos=0;
 	}
 
-	if (bytesinbuffer + bytes > FILEBUFFERSIZE)
+	if (fb->bytesinbuffer + bytes > FILEBUFFERSIZE)
 		fatal (EXIT_BUG_BUG, "Invalid return_to_buffer() - please submit a bug report.");
-	memmove (filebuffer+bytes,filebuffer,bytesinbuffer);
-	memcpy (filebuffer,buffer,bytes);
-	bytesinbuffer+=bytes;
+	memmove (fb->p+bytes,fb->p,fb->bytesinbuffer);
+	memcpy (fb->p,buffer,bytes);
+	fb->bytesinbuffer+=bytes;
 }
 
-LLONG buffered_read_opt (unsigned char *buffer, unsigned int bytes)
+LLONG buffered_read_opt (ccx_context_t::filebuffer_t* fb, unsigned char *buffer, unsigned int bytes)
 {
     LLONG copied=0;
     position_sanity_check();
     time_t seconds=0;
     if (live_stream>0) 
         time (&seconds); 
-    if (buffer_input || filebuffer_pos<bytesinbuffer)
+    if (buffer_input || fb->pos<fb->bytesinbuffer)
     {            
         // Needs to return data from filebuffer_start+pos to filebuffer_start+pos+bytes-1;        
         int eof = (infd==-1); 
@@ -346,7 +346,7 @@ LLONG buffered_read_opt (unsigned char *buffer, unsigned int bytes)
                 // for the data to come up                
                 sleepandchecktimeout (seconds);
             }
-            size_t ready = bytesinbuffer-filebuffer_pos;        
+            size_t ready = fb->bytesinbuffer-fb->pos;        
             if (ready==0) // We really need to read more
             {
                 if (!buffer_input)
@@ -398,15 +398,15 @@ LLONG buffered_read_opt (unsigned char *buffer, unsigned int bytes)
                 }
                 // Keep the last 8 bytes, so we have a guaranteed 
                 // working seek (-8) - needed by mythtv.
-                int keep = bytesinbuffer > 8 ? 8 : bytesinbuffer;
-                memmove (filebuffer,filebuffer+(FILEBUFFERSIZE-keep),keep);
+                int keep = fb->bytesinbuffer > 8 ? 8 : fb->bytesinbuffer;
+                memmove (fb->p,fb->p+(FILEBUFFERSIZE-keep),keep);
 				int i;
 				if (input_source==CCX_DS_FILE || input_source==CCX_DS_STDIN)
-					i=read (infd, filebuffer+keep,FILEBUFFERSIZE-keep);
+					i=read (infd, fb->p+keep,FILEBUFFERSIZE-keep);
 				else
 				{
 					socklen_t len = sizeof(cliaddr);
-					i = recvfrom(infd,(char *) filebuffer+keep,FILEBUFFERSIZE-keep,0,(struct sockaddr *)&cliaddr,&len);
+					i = recvfrom(infd,(char *) fb->p+keep,FILEBUFFERSIZE-keep,0,(struct sockaddr *)&cliaddr,&len);
 				}
                 if( i == -1)
                     fatal (EXIT_READ_ERROR, "Error reading input stream!\n");
@@ -417,8 +417,8 @@ LLONG buffered_read_opt (unsigned char *buffer, unsigned int bytes)
                     if (live_stream || !(binary_concat && switch_to_next_file(copied)))
                         eof=1;
                 }
-                filebuffer_pos=keep;
-                bytesinbuffer=(int) i+keep;
+                fb->pos=keep;
+                fb->bytesinbuffer=(int) i+keep;
                 ready=i;
             }
             int copy = (int) (ready>=bytes ? bytes:ready);
@@ -426,10 +426,10 @@ LLONG buffered_read_opt (unsigned char *buffer, unsigned int bytes)
             {
                 if (buffer!=NULL)        
                 {
-                    memcpy (buffer, filebuffer+filebuffer_pos, copy); 
+                    memcpy (buffer, fb->p+fb->pos, copy); 
                     buffer+=copy;
                 }
-                filebuffer_pos+=copy;        
+                fb->pos+=copy;        
                 bytes-=copy;
                 copied+=copy;
             }

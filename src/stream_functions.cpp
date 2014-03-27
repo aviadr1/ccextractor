@@ -5,10 +5,10 @@
 #include <unistd.h>
 #endif
 
-void detect_stream_type (void)
+void detect_stream_type (ccx_context_t* ctx)
 {
     stream_mode=CCX_SM_ELEMENTARY_OR_NOT_FOUND; // Not found
-	startbytes_avail = (int) buffered_read_opt (startbytes,STARTBYTESLENGTH);
+	startbytes_avail = (int) buffered_read_opt (&ctx->filebuffer, startbytes,STARTBYTESLENGTH);
     
     if( startbytes_avail == -1)
         fatal (EXIT_READ_ERROR, "Error reading input file!\n");
@@ -142,7 +142,7 @@ void detect_stream_type (void)
 		}
 	}
    // Don't use STARTBYTESLENGTH. It might be longer than the file length!
-	return_to_buffer (startbytes, startbytes_avail);
+	return_to_buffer (&ctx->filebuffer, startbytes, startbytes_avail);
 }
 
 
@@ -179,7 +179,7 @@ int detect_myth( void )
  *    0 .. Read from file into nextheader
  *    >0 .. Use data in nextheader with the length of sbuflen
  */
-int read_video_pes_header (unsigned char *nextheader, int *headerlength, int sbuflen)
+int read_video_pes_header (ccx_context_t* ctx, unsigned char *nextheader, int *headerlength, int sbuflen)
 {
     // Read the next video PES
     // ((nextheader[3]&0xf0)==0xe0)
@@ -189,7 +189,7 @@ int read_video_pes_header (unsigned char *nextheader, int *headerlength, int sbu
     if ( !sbuflen )
     {
         // Extension present, get it
-        buffered_read (nextheader+6,3);
+        buffered_read(&ctx->filebuffer, nextheader+6,3);
         past=past+result;
         if (result!=3) {
             // Consider this the end of the show.
@@ -210,7 +210,7 @@ int read_video_pes_header (unsigned char *nextheader, int *headerlength, int sbu
     if ( !sbuflen )
     {
         if (nextheader[8] > 0) {
-            buffered_read (nextheader+9,nextheader[8]);
+            buffered_read(&ctx->filebuffer, nextheader+9,nextheader[8]);
             past=past+result;
             if (result!=nextheader[8]) {
                 return -1;

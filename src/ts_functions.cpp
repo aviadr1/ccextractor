@@ -86,9 +86,9 @@ void init_ts_constants(void)
 
 
 // Return 1 for sucessfully read ts packet
-int ts_readpacket(void)
+int ts_readpacket(ccx_context_t* ctx)
 {
-    buffered_read(tspacket,188);
+    buffered_read(&ctx->filebuffer,tspacket,188);
     past+=result;
     if (result!=188)
     {
@@ -122,7 +122,7 @@ int ts_readpacket(void)
             int atpos = tstemp-tspacket;
 
             memmove (tspacket,tstemp,(size_t)(tslen-atpos));
-            buffered_read(tspacket+(tslen-atpos),atpos);
+            buffered_read(&ctx->filebuffer,tspacket+(tslen-atpos),atpos);
             past+=result;
             if (result!=atpos) 
             {
@@ -134,7 +134,7 @@ int ts_readpacket(void)
         else
         {
             // Read the next 188 bytes.
-            buffered_read(tspacket,tslen);
+            buffered_read(&ctx->filebuffer,tspacket,tslen);
             past+=result;
             if (result!=tslen) 
             {
@@ -798,7 +798,7 @@ void look_for_caption_data (void)
 // Read ts packets until a complete video PES element can be returned.
 // The data is read into capbuf and the function returns the number of
 // bytes read.
-long ts_readstream(void)
+long ts_readstream(ccx_context_t* ctx)
 {
     static int prev_ccounter = 0;
     static int prev_packet = 0;
@@ -816,7 +816,7 @@ long ts_readstream(void)
         if( !prev_packet )
         {
             // Exit the loop at EOF
-            if ( !ts_readpacket() )
+            if ( !ts_readpacket(ctx) )
                 break;
         }
         else
@@ -1023,14 +1023,14 @@ long ts_readstream(void)
 
 
 // TS specific data grabber
-LLONG ts_getmoredata(void)
+LLONG ts_getmoredata(ccx_context_t* ctx)
 {
     long payload_read = 0;
     const char *tstr; // Temporary string to describe the stream type
 	
     do
     {
-        if( !ts_readstream() )
+        if( !ts_readstream(ctx) )
         {   // If we didn't get data, try again
             mprint("(no CC data extracted)\n");
             continue;
@@ -1168,7 +1168,7 @@ LLONG ts_getmoredata(void)
                stream_id, capbuflen);
 
         int pesheaderlen;
-        int vpesdatalen = read_video_pes_header(capbuf, &pesheaderlen, capbuflen);
+        int vpesdatalen = read_video_pes_header(ctx, capbuf, &pesheaderlen, capbuflen);
 
         if (vpesdatalen < 0)
         {   // Seems to be a broken PES

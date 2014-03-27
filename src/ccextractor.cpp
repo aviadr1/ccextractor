@@ -9,16 +9,11 @@ License: GPL 2.0
 
 void xds_cea608_test();
 
-struct ccx_context_t {
-};
 
 void ccx_init_context(ccx_context_t* ctx)
 {
 
 }
-
-extern unsigned char *filebuffer;
-extern int bytesinbuffer; // Number of bytes we actually have on buffer
 
 // PTS timing related stuff
 LLONG min_pts, max_pts, sync_pts;
@@ -374,7 +369,7 @@ int main(int argc, char *argv[])
     }
     if (buffer == NULL || pesheaderbuf==NULL ||
         wbout1.filename == NULL || wbout2.filename == NULL ||
-        subline==NULL || init_file_buffer() || general_608_init())
+        subline==NULL || init_file_buffer(&ctx->filebuffer) || general_608_init())
     {
         fatal (EXIT_NOT_ENOUGH_MEMORY, "Not enough memory\n");        
     }
@@ -541,11 +536,11 @@ int main(int argc, char *argv[])
 
     while (switch_to_next_file(0) && !processed_enough)
     {
-        prepare_for_new_file();
+        prepare_for_new_file(ctx);
 
         if (auto_stream == CCX_SM_AUTODETECT)
         {
-            detect_stream_type();            
+            detect_stream_type(ctx);            
             switch (stream_mode)
             {
                 case CCX_SM_ELEMENTARY_OR_NOT_FOUND:
@@ -631,20 +626,20 @@ int main(int argc, char *argv[])
 				if (!use_gop_as_pts) // If !0 then the user selected something
 					use_gop_as_pts = 0; 
                 mprint ("\rAnalyzing data in general mode\n");
-                general_loop();
+                general_loop(ctx);
                 break;
             case CCX_SM_MCPOODLESRAW:
                 mprint ("\rAnalyzing data in McPoodle raw mode\n");
-                raw_loop();
+                raw_loop(ctx);
                 break;
             case CCX_SM_RCWT:
                 mprint ("\rAnalyzing data in CCExtractor's binary format\n");
-                rcwt_loop();
+                rcwt_loop(ctx);
                 break;
             case CCX_SM_MYTH:
                 mprint ("\rAnalyzing data in MythTV mode\n");
                 show_myth_banner = 1;
-                myth_loop();
+                myth_loop(&ctx->filebuffer);
 				break;
 			case CCX_SM_MP4:				
                 mprint ("\rAnalyzing data with GPAC (MP4 library)\n");
@@ -778,7 +773,7 @@ int main(int argc, char *argv[])
     flushbuffer (&wbout1,false);
     flushbuffer (&wbout2,false);
 
-    prepare_for_new_file (); // To reset counters used by handle_end_of_data()
+    prepare_for_new_file (ctx); // To reset counters used by handle_end_of_data()
 
     if (wbout1.fh!=-1)
     {

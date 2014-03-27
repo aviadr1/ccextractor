@@ -283,20 +283,20 @@ typedef struct AVPacket {
 
 static AVPacket av;
 
-int get_be16()
+int get_be16(ccx_context_t::filebuffer_t* fb)
 {
     unsigned char a,b;
-    buffered_read_byte (&a);
+    buffered_read_byte (fb, &a);
     past++;
-    buffered_read_byte (&b);
+    buffered_read_byte (fb, &b);
     past++;
     return (a<<8) | b;
 }
 
-int get_byte ()
+int get_byte (ccx_context_t::filebuffer_t* fb)
 {
 	unsigned char b;
-	buffered_read_byte(&b);  
+	buffered_read_byte(fb, &b);  
     if (result==1)
     {
         past++;
@@ -306,31 +306,32 @@ int get_byte ()
         return 0;
 }
 
-unsigned int get_be32()
+unsigned int get_be32(ccx_context_t::filebuffer_t* fb)
 {
     unsigned int val;
-    val = get_be16() << 16;
-    val |= get_be16();
+    val = get_be16(fb) << 16;
+    val |= get_be16(fb);
     return val;
 }
 
 
-static LLONG get_pts(int c)
+static LLONG get_pts(ccx_context_t::filebuffer_t* fb, int c)
 {
     LLONG pts;
     int val;
 
     if (c < 0)
-        c = get_byte();
+        c = get_byte(fb);
     pts = LLONG((c >> 1) & 0x07) << 30;
-    val = get_be16();
+    val = get_be16(fb);
     pts |= LLONG (val >> 1) << 15;
-    val = get_be16();
+    val = get_be16(fb);
     pts |= LLONG (val >> 1);
     return pts;
 }
 
-static int find_next_start_code(int *size_ptr,
+static int find_next_start_code(ccx_context_t::filebuffer_t* fb,
+                                int *size_ptr,
                                 unsigned int *header_state)
 {
     unsigned int state, v;
@@ -341,7 +342,7 @@ static int find_next_start_code(int *size_ptr,
     while (n > 0) 
     {
         unsigned char cx;
-        buffered_read_byte (&cx);
+        buffered_read_byte (fb, &cx);
         if (result!=1)        
             break;
         past++;
@@ -361,43 +362,44 @@ found:
     return val;
 }
 
-void url_fskip (int length)
+void url_fskip (ccx_context_t::filebuffer_t* fb, int length)
 {
-    buffered_seek (length);    
+    buffered_seek (fb, length);    
     past+=length;
 }
 
-static long mpegps_psm_parse(void)
+static long mpegps_psm_parse(ccx_context_t::filebuffer_t* fb)
 {
     int psm_length, ps_info_length, es_map_length;
 
-    psm_length = get_be16();
-    get_byte();
-    get_byte();
-    ps_info_length = get_be16();
+    psm_length = get_be16(fb);
+    get_byte(fb);
+    get_byte(fb);
+    ps_info_length = get_be16(fb);
 
     /* skip program_stream_info */
-    url_fskip(ps_info_length);
-    es_map_length = get_be16();
+    url_fskip(fb, ps_info_length);
+    es_map_length = get_be16(fb);
 
     /* at least one es available? */
     while (es_map_length >= 4)
     {
-        unsigned char type = (unsigned char) get_byte();
-        unsigned char es_id =(unsigned char) get_byte();
-        unsigned int es_info_length = get_be16();
+        unsigned char type = (unsigned char) get_byte(fb);
+        unsigned char es_id =(unsigned char) get_byte(fb);
+        unsigned int es_info_length = get_be16(fb);
         /* remember mapping from stream id to stream type */
         psm_es_type[es_id] = type;
         /* skip program_stream_info */
-        url_fskip(es_info_length);
+        url_fskip(fb, es_info_length);
         es_map_length -= 4 + es_info_length;
     }
-    get_be32(); /* crc32 */
+    get_be32(fb); /* crc32 */
     return 2 + psm_length;
 }
 
 
-static int mpegps_read_pes_header(int *pstart_code,
+static int mpegps_read_pes_header(ccx_context_t::filebuffer_t* fb,
+                                  int *pstart_code,
                                   LLONG *ppts, LLONG *pdts)
 {    
     int len, size, startcode, c, flags, header_len;
@@ -408,7 +410,7 @@ redo:
     /* next start code (should be immediately after) */
     header_state = 0xff;
     size = MAX_SYNC_SIZE;
-    startcode = find_next_start_code(&size, &header_state);
+    startcode = find_next_start_code(fb, &size, &header_state);
     //printf("startcode=%x pos=0x%Lx\n", startcode, url_ftell(&s->pb));
     if (startcode < 0)
         return AVERROR_IO;
@@ -420,14 +422,14 @@ redo:
         startcode == PRIVATE_STREAM_2) 
     {
         /* skip them */
-        len = get_be16();
+        len = get_be16(fb);
         // url_fskip(len);
         goto redo;
     }
     position_sanity_check();
     if (startcode == PROGRAM_STREAM_MAP)
     {
-        mpegps_psm_parse();
+        mpegps_psm_parse(fb);
         goto redo;
     }
 
@@ -437,7 +439,7 @@ redo:
         (startcode == 0x1bd)))
         goto redo;
 
-    len = get_be16();
+    len = get_be16(fb);
     pts = AV_NOPTS_VALUE;
     dts = AV_NOPTS_VALUE;
     position_sanity_check();
@@ -445,7 +447,7 @@ redo:
     for(;;) {
         if (len < 1)
             goto redo;
-        c = get_byte();
+        c = get_byte(fb);
         len--;
         /* XXX: for mpeg1, should test only bit 7 */
         if (c != 0xff)
@@ -456,21 +458,21 @@ redo:
         /* buffer scale & size */
         if (len < 2)
             goto redo;
-        get_byte();
-        c = get_byte();
+        get_byte(fb);
+        c = get_byte(fb);
         len -= 2;
     }
     position_sanity_check();
     if ((c & 0xf0) == 0x20) {
         if (len < 4)
             goto redo;
-        dts = pts = get_pts( c);
+        dts = pts = get_pts(fb, c);
         len -= 4;
     } else if ((c & 0xf0) == 0x30) {
         if (len < 9)
             goto redo;
-        pts = get_pts(c);
-        dts = get_pts(-1);
+        pts = get_pts(fb, c);
+        dts = get_pts(fb, -1);
         len -= 9;
     } else if ((c & 0xc0) == 0x80) {
         /* mpeg 2 PES */
@@ -480,20 +482,20 @@ redo:
             goto redo;
         }
 #endif
-        flags = get_byte();
-        header_len = get_byte();
+        flags = get_byte(fb);
+        header_len = get_byte(fb);
         len -= 2;
         if (header_len > len)
             goto redo;
         if ((flags & 0xc0) == 0x80) {
-            dts = pts = get_pts(-1);
+            dts = pts = get_pts(fb, -1);
             if (header_len < 5)
                 goto redo;
             header_len -= 5;
             len -= 5;
         } if ((flags & 0xc0) == 0xc0) {
-            pts = get_pts( -1);
-            dts = get_pts( -1);
+            pts = get_pts(fb, -1);
+            dts = get_pts(fb, -1);
             if (header_len < 10)
                 goto redo;
             header_len -= 10;
@@ -501,7 +503,7 @@ redo:
         }
         len -= header_len;
         while (header_len > 0) {
-            get_byte();
+            get_byte(fb);
             header_len--;
         }
     }
@@ -512,15 +514,15 @@ redo:
     {
         if (len < 1)
             goto redo;
-        startcode = get_byte();
+        startcode = get_byte(fb);
         len--;
         if (startcode >= 0x80 && startcode <= 0xbf) {
             /* audio: skip header */
             if (len < 3)
                 goto redo;
-            get_byte();
-            get_byte();
-            get_byte();
+            get_byte(fb);
+            get_byte(fb);
+            get_byte(fb);
             len -= 3;
         }
     }
@@ -636,13 +638,13 @@ void ProcessVBIDataPacket()
     // lastccptsu = utc;
 }
 
-static int mpegps_read_packet(void)
+static int mpegps_read_packet(ccx_context_t::filebuffer_t* fb)
 {
     LLONG pts, dts;
 
     int len, startcode,  type, codec_id = 0, es_type;
 redo:
-    len = mpegps_read_pes_header(&startcode, &pts, &dts);
+    len = mpegps_read_pes_header(fb, &startcode, &pts, &dts);
     if (len < 0)
         return len;
     position_sanity_check();
@@ -687,10 +689,10 @@ redo:
         {
             static const unsigned char avs_seqh[4] = { 0, 0, 1, 0xb0 };
             unsigned char buf[8];
-            buffered_read (buf,8);
+            buffered_read (fb, buf,8);
             past+=8;
             // get_buffer(&s->pb, buf, 8);
-            buffered_seek (-8);
+            buffered_seek (fb, -8);
             past-=8;
             if(!memcmp(buf, avs_seqh, 4) && (buf[6] != 0 || buf[7] != 1))
                 codec_id = CODEC_ID_CAVS;
@@ -718,7 +720,7 @@ redo:
         } else {
 skip:
             // skip packet 
-            url_fskip(len);
+            url_fskip(fb, len);
             goto redo;
         }
         // no stream found: add a new stream 
@@ -745,9 +747,9 @@ found:
             // audio data 		
             if (len <= 3)
                 goto skip;
-            get_byte(); // emphasis (1), muse(1), reserved(1), frame number(5) 
-            get_byte(); // quant (2), freq(2), reserved(1), channels(3) 
-            get_byte(); // dynamic range control (0x80 = off) 
+            get_byte(fb); // emphasis (1), muse(1), reserved(1), frame number(5) 
+            get_byte(fb); // quant (2), freq(2), reserved(1), channels(3) 
+            get_byte(fb); // dynamic range control (0x80 = off) 
             len -= 3;
             //freq = (b1 >> 4) & 3;
             //st->codec->sample_rate = lpcm_freq_tab[freq];
@@ -769,7 +771,7 @@ found:
         }
         av.codec_id=codec_id;
         av.type=type;
-        buffered_read (av.data,av.size);
+        buffered_read (fb, av.data,av.size);
         past+=av.size;
         position_sanity_check();
         // LSEEK (fh,pkt->size,SEEK_CUR);
@@ -816,14 +818,14 @@ void build_parity_table (void)
 	cc608_build_parity_table(cc608_parity_table);
 }
 
-void myth_loop(void)
+void myth_loop(ccx_context_t::filebuffer_t* fb)
 {	
     int rc;
 	int has_vbi=0;	
     
     av.data=NULL;
     buffer_input = 1;
-    if (init_file_buffer())
+    if (init_file_buffer(fb))
     {
         fatal (EXIT_NOT_ENOUGH_MEMORY, "Not enough memory.\n");        
     }
@@ -833,7 +835,7 @@ void myth_loop(void)
 		fatal (EXIT_NOT_ENOUGH_MEMORY, "Not enough memory.\n");
     LLONG saved=0;
 
-    while (!processed_enough && (rc=mpegps_read_packet ())==0)
+    while (!processed_enough && (rc=mpegps_read_packet (fb))==0)
     {
         position_sanity_check();
         if (av.codec_id==CODEC_ID_MPEG2VBI && av.type==CODEC_TYPE_DATA)

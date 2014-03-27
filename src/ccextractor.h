@@ -15,6 +15,18 @@
 
 #define VERSION "0.69"
 
+struct ccx_context_t 
+{
+    struct filebuffer_t {
+        unsigned char *p;
+        int bytesinbuffer; // Number of bytes we actually have on buffer
+        LLONG start; // Position of buffer start relative to file
+        int pos; // Position of pointer relative to buffer start
+    } filebuffer;
+};
+
+extern void ccx_init_context(ccx_context_t* ctx);
+
 extern int cc_buffer_saved; // Do we have anything in the CC buffer already? 
 extern int ccblocks_in_avc_total; // Total CC blocks found by the AVC code
 extern int ccblocks_in_avc_lost; // CC blocks found by the AVC code lost due to overwrites (should be 0)
@@ -70,33 +82,11 @@ struct ccx_s_teletext_config {
     uint16_t user_page; // Page selected by user, which MIGHT be different to 'page' depending on autodetection stuff
 };
 
-#define buffered_skip(bytes) if (bytes<=bytesinbuffer-filebuffer_pos) { \
-    filebuffer_pos+=bytes; \
-    result=bytes; \
-} else result=buffered_read_opt (NULL,bytes);
-
-#define buffered_read(buffer,bytes) if (bytes<=bytesinbuffer-filebuffer_pos) { \
-    if (buffer!=NULL) memcpy (buffer,filebuffer+filebuffer_pos,bytes); \
-    filebuffer_pos+=bytes; \
-    result=bytes; \
-} else { result=buffered_read_opt (buffer,bytes); if (gui_mode_reports && input_source==CCX_DS_NETWORK) {net_activity_gui++; if (!(net_activity_gui%1000))activity_report_data_read();}}
-
-#define buffered_read_4(buffer) if (4<=bytesinbuffer-filebuffer_pos) { \
-    if (buffer) { buffer[0]=filebuffer[filebuffer_pos]; \
-    buffer[1]=filebuffer[filebuffer_pos+1]; \
-    buffer[2]=filebuffer[filebuffer_pos+2]; \
-    buffer[3]=filebuffer[filebuffer_pos+3]; \
-    filebuffer_pos+=4; \
-    result=4; } \
-} else result=buffered_read_opt (buffer,4);
-
-#define buffered_read_byte(buffer) if (bytesinbuffer-filebuffer_pos) { \
-    if (buffer) { *buffer=filebuffer[filebuffer_pos]; \
-    filebuffer_pos++; \
-    result=1; } \
-} else result=buffered_read_opt (buffer,1);
-
-extern LLONG buffered_read_opt (unsigned char *buffer, unsigned int bytes);
+extern LLONG buffered_read_opt (ccx_context_t::filebuffer_t* fb, unsigned char *buffer, unsigned int bytes);
+extern void buffered_skip(ccx_context_t::filebuffer_t* fb, int bytes);
+extern void buffered_read(ccx_context_t::filebuffer_t* ctx, uint8_t* buffer, int bytes);
+extern void buffered_read_byte(ccx_context_t::filebuffer_t* ctx, uint8_t* buffer);
+extern void buffered_seek (ccx_context_t::filebuffer_t* fb, int offset);
 
 //params.cpp
 void parse_parameters (int argc, char *argv[]);
@@ -104,14 +94,14 @@ void usage (void);
 
 // general_loop.cpp
 void position_sanity_check ();
-int init_file_buffer( void );
-LLONG ps_getmoredata( void );
-LLONG general_getmoredata( void );
-void raw_loop (void);
+int init_file_buffer( ccx_context_t::filebuffer_t* fb );
+LLONG ps_getmoredata( ccx_context_t* ctx);
+LLONG general_getmoredata( ccx_context_t::filebuffer_t* fb);
+void raw_loop (ccx_context_t* ctx);
 LLONG process_raw (void);
-void general_loop(void);
+void general_loop(ccx_context_t* ctx);
 void processhex (char *filename);
-void rcwt_loop( void );
+void rcwt_loop(ccx_context_t* ctx);
 
 // activity.cpp
 void activity_header (void);
@@ -136,12 +126,12 @@ extern LLONG inbuf;
 extern int ccx_bufferdatatype; // Can be RAW or PES
 
 // asf_functions.cpp
-LLONG asf_getmoredata( void );
+LLONG asf_getmoredata( ccx_context_t* ctx );
 
 extern int wtvconvertfix;
 
 // wtv_functions.cpp
-LLONG wtv_getmoredata( void );
+LLONG wtv_getmoredata( ccx_context_t* ctx);
 
 extern int wtvmpeg2;
 
@@ -172,11 +162,11 @@ LLONG get_visible_end (void);
 // file_functions.cpp
 LLONG getfilesize (int in);
 LLONG gettotalfilessize (void);
-void prepare_for_new_file (void);
+void prepare_for_new_file (ccx_context_t* ctx);
 void close_input_file (void);
 int switch_to_next_file (LLONG bytesinbuffer);
 int init_sockets (void);
-void return_to_buffer (unsigned char *buffer, unsigned int bytes);
+void return_to_buffer (ccx_context_t::filebuffer_t* fb, unsigned char *buffer, unsigned int bytes);
 
 // timing.cpp
 void set_fts(void);
@@ -210,18 +200,18 @@ void printdata (const unsigned char *data1, int length1,const unsigned char *dat
 void writercwtdata (const unsigned char *data);
 
 // stream_functions.cpp
-void detect_stream_type (void);
+void detect_stream_type (ccx_context_t* ctx);
 int detect_myth( void );
-int read_video_pes_header (unsigned char *header, int *headerlength, int sbuflen);
+int read_video_pes_header (ccx_context_t* ctx, unsigned char *header, int *headerlength, int sbuflen);
 
 // ts_functions.cpp
 void init_ts_constants( void );
-int ts_readpacket(void);
-long ts_readstream(void);
-LLONG ts_getmoredata( void );
+int ts_readpacket(ccx_context_t* ctx);
+long ts_readstream(ccx_context_t* ctx);
+LLONG ts_getmoredata( ccx_context_t* ctx);
 
 // myth.cpp
-void myth_loop(void);
+void myth_loop(ccx_context_t::filebuffer_t* fb);
 
 // mp4_bridge2bento4.cpp
 void mp4_loop (char *filename);
@@ -258,7 +248,6 @@ int levenshtein_dist (const uint64_t *s1, const uint64_t *s2, unsigned s1len, un
 
 void init_eia608 (struct eia608 *data);
 unsigned encode_line (unsigned char *buffer, unsigned char *text);
-void buffered_seek (int offset);
 void write_subtitle_file_header (struct ccx_s_write *wb);
 void write_subtitle_file_footer (struct ccx_s_write *wb);
 extern void build_parity_table(void);
@@ -315,10 +304,6 @@ extern unsigned total_pulldownframes;
 
 extern int CaptionGap;
 
-extern unsigned char *filebuffer;
-extern LLONG filebuffer_start; // Position of buffer start relative to file
-extern int filebuffer_pos; // Position of pointer relative to buffer start
-extern int bytesinbuffer; // Number of bytes we actually have on buffer
 extern int live_stream;
 
 
