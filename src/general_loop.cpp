@@ -40,18 +40,18 @@ static int non_compliant_DVD = 0; // Found extra captions in DVDs?
 
 LLONG process_raw_with_field (void);
 
-void buffered_skip(ccx_context_t::filebuffer_t* fb, int bytes)
+void ccx_buffered_skip(ccx_context_t::filebuffer_t* fb, int bytes)
 {
     if (bytes<=fb->bytesinbuffer-fb->pos) {
         fb->pos+=bytes;
         result=bytes;
     } 
     else {
-        buffered_read_opt (fb, NULL,bytes);
+        ccx_buffered_read_opt (fb, NULL,bytes);
     }
 }
 
-void buffered_read(ccx_context_t::filebuffer_t* fb, uint8_t* buffer, int bytes)
+void ccx_buffered_read(ccx_context_t::filebuffer_t* fb, uint8_t* buffer, int bytes)
 {
     if (bytes<=fb->bytesinbuffer-fb->pos) { 
         if (buffer!=NULL) {
@@ -62,7 +62,7 @@ void buffered_read(ccx_context_t::filebuffer_t* fb, uint8_t* buffer, int bytes)
         result=bytes;
     } 
     else { 
-        buffered_read_opt (fb, buffer,bytes); 
+        ccx_buffered_read_opt (fb, buffer,bytes); 
         if (gui_mode_reports && input_source==CCX_DS_NETWORK) {
             net_activity_gui++; 
             if (!(net_activity_gui%1000)) {
@@ -72,7 +72,7 @@ void buffered_read(ccx_context_t::filebuffer_t* fb, uint8_t* buffer, int bytes)
     }
 }
 
-void buffered_read_byte(ccx_context_t::filebuffer_t* fb, uint8_t* buffer)
+void ccx_buffered_read_byte(ccx_context_t::filebuffer_t* fb, uint8_t* buffer)
 {
     if (fb->bytesinbuffer-fb->pos) {
         if (buffer) { 
@@ -82,7 +82,7 @@ void buffered_read_byte(ccx_context_t::filebuffer_t* fb, uint8_t* buffer)
         }
     } 
     else {
-        result=buffered_read_opt (fb, buffer,1);
+        result=ccx_buffered_read_opt (fb, buffer,1);
     }
 }
 
@@ -108,7 +108,7 @@ LLONG ps_getmoredata(ccx_context_t* ctx)
         }
         else 
         {
-            buffered_read(&ctx->filebuffer,nextheader,6);
+            ccx_buffered_read(&ctx->filebuffer,nextheader,6);
             past+=result;
             if (result!=6) 
             {
@@ -141,7 +141,7 @@ LLONG ps_getmoredata(ccx_context_t* ctx)
                     int atpos = newheader-nextheader;
 
                     memmove (nextheader,newheader,(size_t)(hlen-atpos)); 
-                    buffered_read(&ctx->filebuffer,nextheader+(hlen-atpos),atpos);
+                    ccx_buffered_read(&ctx->filebuffer,nextheader+(hlen-atpos),atpos);
                     past+=result;
                     if (result!=atpos) 
                     {
@@ -151,7 +151,7 @@ LLONG ps_getmoredata(ccx_context_t* ctx)
                 }
                 else
                 {
-                    buffered_read(&ctx->filebuffer,nextheader,hlen);
+                    ccx_buffered_read(&ctx->filebuffer,nextheader,hlen);
                     past+=result;
                     if (result!=hlen) 
                     {
@@ -172,7 +172,7 @@ LLONG ps_getmoredata(ccx_context_t* ctx)
             if ( nextheader[3]==0xBA) 
             {
                 dbg_print(CCX_DMT_VERBOSE, "PACK header\n");
-                buffered_read(&ctx->filebuffer,nextheader+6,8);
+                ccx_buffered_read(&ctx->filebuffer,nextheader+6,8);
                 past+=result;
                 if (result!=8) 
                 {
@@ -197,7 +197,7 @@ LLONG ps_getmoredata(ccx_context_t* ctx)
                 }
 
                 // If not defect, load stuffing
-                buffered_skip(&ctx->filebuffer,(int) stufflen);
+                ccx_buffered_skip(&ctx->filebuffer,(int) stufflen);
                 past+=stufflen;
                 // fake a result value as something was skipped
                 result=1;
@@ -229,7 +229,7 @@ LLONG ps_getmoredata(ccx_context_t* ctx)
                 }
 
                 // Skip over it
-                buffered_skip(&ctx->filebuffer, (int) headerlen);
+                ccx_buffered_skip(&ctx->filebuffer, (int) headerlen);
                 past+=headerlen;
                 // fake a result value as something was skipped
                 result=1;
@@ -261,7 +261,7 @@ LLONG ps_getmoredata(ccx_context_t* ctx)
                     continue;
                 }
 
-                buffered_read(&ctx->filebuffer, buffer+inbuf,want);
+                ccx_buffered_read(&ctx->filebuffer, buffer+inbuf,want);
                 past=past+result;
                 if (result>0) {
                     payload_read+=(int) result;
@@ -298,7 +298,7 @@ LLONG general_getmoredata(ccx_context_t::filebuffer_t* fb)
     do 
     {		
         want = (int) (BUFSIZE-inbuf);
-        buffered_read (fb, buffer+inbuf,want); // This is a macro.		
+        ccx_buffered_read (fb, buffer+inbuf,want); // This is a macro.		
         // 'result' HAS the number of bytes read
         past=past+result;
         inbuf+=result;
@@ -764,7 +764,7 @@ void rcwt_loop( ccx_context_t* ctx )
 
     int bread = 0; // Bytes read
 
-    buffered_read(&ctx->filebuffer,parsebuf,11);
+    ccx_buffered_read(&ctx->filebuffer,parsebuf,11);
     past+=result;
     bread+=(int) result;
     if (result!=11)
@@ -798,7 +798,7 @@ void rcwt_loop( ccx_context_t* ctx )
     while(1)
     {
         // Read the data header
-        buffered_read(&ctx->filebuffer,parsebuf,10);
+        ccx_buffered_read(&ctx->filebuffer,parsebuf,10);
         past+=result;
         bread+=(int) result;
 
@@ -825,7 +825,7 @@ void rcwt_loop( ccx_context_t* ctx )
                     fatal(EXIT_NOT_ENOUGH_MEMORY, "Out of memory");
                 parsebufsize = cbcount*3;
             }
-            buffered_read(&ctx->filebuffer,parsebuf,cbcount*3);
+            ccx_buffered_read(&ctx->filebuffer,parsebuf,cbcount*3);
             past+=result;
             bread+=(int) result;
             if (result!=cbcount*3)

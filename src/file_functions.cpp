@@ -73,7 +73,7 @@ void prepare_for_new_file (ccx_context_t* ctx)
     pts_big_change=0;
     startbytes_pos=0;
     startbytes_avail=0;
-    init_file_buffer(&ctx->filebuffer);
+    ccx_buffered_init(&ctx->filebuffer);
     anchor_hdcc(-1);
     firstcall = 1;
 }
@@ -236,7 +236,7 @@ void position_sanity_check ()
 }
 
 
-int init_file_buffer(ccx_context_t::filebuffer_t* fb)
+int ccx_buffered_init(ccx_context_t::filebuffer_t* fb)
 {
     fb->start=0;
     fb->pos=0;    
@@ -252,7 +252,7 @@ int init_file_buffer(ccx_context_t::filebuffer_t* fb)
     return 0;
 }
 
-void buffered_seek (ccx_context_t::filebuffer_t* fb, int offset)
+void ccx_buffered_seek (ccx_context_t::filebuffer_t* fb, int offset)
 {
     position_sanity_check();
     if (offset<0)
@@ -271,7 +271,7 @@ void buffered_seek (ccx_context_t::filebuffer_t* fb, int offset)
     }
     else
     {
-        result = buffered_read_opt (fb, NULL, offset);
+        result = ccx_buffered_read_opt (fb, NULL, offset);
         position_sanity_check();
     }
 }
@@ -326,7 +326,7 @@ void return_to_buffer (ccx_context_t::filebuffer_t* fb, unsigned char *buffer, u
 	fb->bytesinbuffer+=bytes;
 }
 
-LLONG buffered_read_opt (ccx_context_t::filebuffer_t* fb, unsigned char *buffer, unsigned int bytes)
+LLONG ccx_buffered_read_opt (ccx_context_t::filebuffer_t* fb, unsigned char *buffer, unsigned int bytes)
 {
     LLONG copied=0;
     position_sanity_check();

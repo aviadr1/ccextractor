@@ -82,11 +82,12 @@ struct ccx_s_teletext_config {
     uint16_t user_page; // Page selected by user, which MIGHT be different to 'page' depending on autodetection stuff
 };
 
-extern LLONG buffered_read_opt (ccx_context_t::filebuffer_t* fb, unsigned char *buffer, unsigned int bytes);
-extern void buffered_skip(ccx_context_t::filebuffer_t* fb, int bytes);
-extern void buffered_read(ccx_context_t::filebuffer_t* ctx, uint8_t* buffer, int bytes);
-extern void buffered_read_byte(ccx_context_t::filebuffer_t* ctx, uint8_t* buffer);
-extern void buffered_seek (ccx_context_t::filebuffer_t* fb, int offset);
+extern LLONG ccx_buffered_read_opt (ccx_context_t::filebuffer_t* fb, unsigned char *buffer, unsigned int bytes);
+extern void ccx_buffered_skip(ccx_context_t::filebuffer_t* fb, int bytes);
+extern void ccx_buffered_read(ccx_context_t::filebuffer_t* ctx, uint8_t* buffer, int bytes);
+extern void ccx_buffered_read_byte(ccx_context_t::filebuffer_t* ctx, uint8_t* buffer);
+extern void ccx_buffered_seek (ccx_context_t::filebuffer_t* fb, int offset);
+extern int ccx_buffered_init( ccx_context_t::filebuffer_t* fb );
 
 //params.cpp
 void parse_parameters (int argc, char *argv[]);
@@ -94,7 +95,6 @@ void usage (void);
 
 // general_loop.cpp
 void position_sanity_check ();
-int init_file_buffer( ccx_context_t::filebuffer_t* fb );
 LLONG ps_getmoredata( ccx_context_t* ctx);
 LLONG general_getmoredata( ccx_context_t::filebuffer_t* fb);
 void raw_loop (ccx_context_t* ctx);

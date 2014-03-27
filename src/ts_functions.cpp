@@ -88,7 +88,7 @@ void init_ts_constants(void)
 // Return 1 for sucessfully read ts packet
 int ts_readpacket(ccx_context_t* ctx)
 {
-    buffered_read(&ctx->filebuffer,tspacket,188);
+    ccx_buffered_read(&ctx->filebuffer,tspacket,188);
     past+=result;
     if (result!=188)
     {
@@ -122,7 +122,7 @@ int ts_readpacket(ccx_context_t* ctx)
             int atpos = tstemp-tspacket;
 
             memmove (tspacket,tstemp,(size_t)(tslen-atpos));
-            buffered_read(&ctx->filebuffer,tspacket+(tslen-atpos),atpos);
+            ccx_buffered_read(&ctx->filebuffer,tspacket+(tslen-atpos),atpos);
             past+=result;
             if (result!=atpos) 
             {
@@ -134,7 +134,7 @@ int ts_readpacket(ccx_context_t* ctx)
         else
         {
             // Read the next 188 bytes.
-            buffered_read(&ctx->filebuffer,tspacket,tslen);
+            ccx_buffered_read(&ctx->filebuffer,tspacket,tslen);
             past+=result;
             if (result!=tslen) 
             {

@@ -12,6 +12,7 @@ void xds_cea608_test();
 
 void ccx_init_context(ccx_context_t* ctx)
 {
+    ccx_buffered_init(&ctx->filebuffer);
 
 }
 
@@ -369,7 +370,7 @@ int main(int argc, char *argv[])
     }
     if (buffer == NULL || pesheaderbuf==NULL ||
         wbout1.filename == NULL || wbout2.filename == NULL ||
-        subline==NULL || init_file_buffer(&ctx->filebuffer) || general_608_init())
+        subline==NULL || ccx_buffered_init(&ctx->filebuffer) || general_608_init())
     {
         fatal (EXIT_NOT_ENOUGH_MEMORY, "Not enough memory\n");        
     }

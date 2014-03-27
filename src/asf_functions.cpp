@@ -177,7 +177,7 @@ LLONG asf_getmoredata(ccx_context_t* ctx)
             PayloadExtPTSEntry[stream] = -1;
         }
 
-        buffered_read(&ctx->filebuffer,parsebuf,30);
+        ccx_buffered_read(&ctx->filebuffer,parsebuf,30);
         past+=result;
         if (result!=30)
         {
@@ -211,7 +211,7 @@ LLONG asf_getmoredata(ccx_context_t* ctx)
         curpos = parsebuf + 30;
         getbytes = HeaderObjectSize - 30;
 
-        buffered_read(&ctx->filebuffer,curpos, (int) getbytes);
+        ccx_buffered_read(&ctx->filebuffer,curpos, (int) getbytes);
         past+=result;
         if (result!=getbytes)
         {
@@ -560,7 +560,7 @@ LLONG asf_getmoredata(ccx_context_t* ctx)
             PacketSize = MinPacketSize;
 
         // Now the Data Object, except for the packages
-        buffered_read(&ctx->filebuffer,parsebuf,50); // No realloc needed.
+        ccx_buffered_read(&ctx->filebuffer,parsebuf,50); // No realloc needed.
         past+=result;
         if (result!=50)
         {
@@ -602,7 +602,7 @@ LLONG asf_getmoredata(ccx_context_t* ctx)
 			dbg_print(CCX_DMT_PARSE,"\nReading packet %d/%d\n", datapacketcur+1, TotalDataPackets);
 
             // First packet
-            buffered_read(&ctx->filebuffer,parsebuf,1); // No realloc needed.
+            ccx_buffered_read(&ctx->filebuffer,parsebuf,1); // No realloc needed.
             past+=result;
             dobjectread+=result;
             if (result!=1)
@@ -619,7 +619,7 @@ LLONG asf_getmoredata(ccx_context_t* ctx)
                 {
                     fatal(EXIT_NOT_CLASSIFIED, "Error Correction Length Type not 00 - reserved - aborting ...\n");
                 }
-                buffered_read(&ctx->filebuffer,parsebuf+1,ecdatalength);
+                ccx_buffered_read(&ctx->filebuffer,parsebuf+1,ecdatalength);
                 past+=result;
                 dobjectread+=result;
                 if (result!=ecdatalength)
@@ -640,7 +640,7 @@ LLONG asf_getmoredata(ccx_context_t* ctx)
             }
 
             // Now payload parsing information
-            buffered_read(&ctx->filebuffer,parsebuf+ecinfo,2-ecinfo); // No realloc needed
+            ccx_buffered_read(&ctx->filebuffer,parsebuf+ecinfo,2-ecinfo); // No realloc needed
             past+=result;
             dobjectread+=result;
             if (result!=2)
@@ -676,7 +676,7 @@ LLONG asf_getmoredata(ccx_context_t* ctx)
 
             payloadparsersize = PacketLType + SequenceType + PaddingLType + 6;
 
-            buffered_read(&ctx->filebuffer,parsebuf+2, payloadparsersize); // No realloc needed
+            ccx_buffered_read(&ctx->filebuffer,parsebuf+2, payloadparsersize); // No realloc needed
             past+=result;
             dobjectread+=result;
             if (result!=payloadparsersize)
@@ -714,7 +714,7 @@ LLONG asf_getmoredata(ccx_context_t* ctx)
             {
                 unsigned char plheader[1];
 
-                buffered_read(&ctx->filebuffer,plheader, 1);
+                ccx_buffered_read(&ctx->filebuffer,plheader, 1);
                 past+=result;
                 dobjectread+=result;
                 if (result!=1)
@@ -753,7 +753,7 @@ LLONG asf_getmoredata(ccx_context_t* ctx)
 
                 int payloadheadersize = 1+MediaNumberLType+OffsetMediaLType+ReplicatedLType;
             
-                buffered_read(&ctx->filebuffer,parsebuf, payloadheadersize); // No realloc needed
+                ccx_buffered_read(&ctx->filebuffer,parsebuf, payloadheadersize); // No realloc needed
                 past+=result;
                 dobjectread+=result;
                 if (result!=payloadheadersize)
@@ -781,7 +781,7 @@ LLONG asf_getmoredata(ccx_context_t* ctx)
                         fatal(EXIT_NOT_ENOUGH_MEMORY, "Out of memory");
                     parsebufsize = ReplicatedLength;
                 }
-                buffered_read(&ctx->filebuffer,parsebuf, (long)ReplicatedLength);
+                ccx_buffered_read(&ctx->filebuffer,parsebuf, (long)ReplicatedLength);
                 past+=result;
                 dobjectread+=result;
                 if (result!=ReplicatedLength)
@@ -857,7 +857,7 @@ LLONG asf_getmoredata(ccx_context_t* ctx)
                 {
                     unsigned char plheader[4];
 
-                    buffered_read(&ctx->filebuffer,plheader, PayloadLType);
+                    ccx_buffered_read(&ctx->filebuffer,plheader, PayloadLType);
                     past+=result;
                     dobjectread+=result;
                     if (result!=PayloadLType)
@@ -1000,7 +1000,7 @@ LLONG asf_getmoredata(ccx_context_t* ctx)
                                   PayloadLength : (BUFSIZE-inbuf));
                 if (want < (long)PayloadLength )
                     fatal(EXIT_BUG_BUG, "Buffer size to small for ASF payload!\nPlease file a bug report!\n");
-                buffered_read(&ctx->filebuffer, buffer+inbuf,want);
+                ccx_buffered_read(&ctx->filebuffer, buffer+inbuf,want);
                 payload_read+=(int) result;
                 inbuf+=result;
                 past+=result;
@@ -1016,7 +1016,7 @@ LLONG asf_getmoredata(ccx_context_t* ctx)
             {
                 // Skip non-cc data
                 dbg_print(CCX_DMT_PARSE, "Skipping Stream #%d data ...\n", PayloadStreamNumber);
-                buffered_skip(&ctx->filebuffer, (int) PayloadLength);
+                ccx_buffered_skip(&ctx->filebuffer, (int) PayloadLength);
                 past+=result;
                 if (result!=PayloadLength)
                 {
@@ -1034,7 +1034,7 @@ LLONG asf_getmoredata(ccx_context_t* ctx)
 
         // Skip padding bytes
         dbg_print(CCX_DMT_PARSE, "Skip %d padding\n", PaddingLength);
-        buffered_skip(&ctx->filebuffer,(long)PaddingLength);
+        ccx_buffered_skip(&ctx->filebuffer,(long)PaddingLength);
         past+=result;
         if (result!=PaddingLength)
         {
@@ -1054,7 +1054,7 @@ LLONG asf_getmoredata(ccx_context_t* ctx)
 
         // Skip the rest of the file
         dbg_print(CCX_DMT_PARSE, "Skip the rest: %d\n",int(FileSize - HeaderObjectSize - DataObjectSize));
-        buffered_skip(&ctx->filebuffer,int(FileSize - HeaderObjectSize - DataObjectSize));
+        ccx_buffered_skip(&ctx->filebuffer,int(FileSize - HeaderObjectSize - DataObjectSize));
         past+=result;
         // Don not set end_of_file (although it is true) as this would
         // produce an premature end error.

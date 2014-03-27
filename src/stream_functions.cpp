@@ -8,7 +8,7 @@
 void detect_stream_type (ccx_context_t* ctx)
 {
     stream_mode=CCX_SM_ELEMENTARY_OR_NOT_FOUND; // Not found
-	startbytes_avail = (int) buffered_read_opt (&ctx->filebuffer, startbytes,STARTBYTESLENGTH);
+	startbytes_avail = (int) ccx_buffered_read_opt (&ctx->filebuffer, startbytes,STARTBYTESLENGTH);
     
     if( startbytes_avail == -1)
         fatal (EXIT_READ_ERROR, "Error reading input file!\n");
@@ -189,7 +189,7 @@ int read_video_pes_header (ccx_context_t* ctx, unsigned char *nextheader, int *h
     if ( !sbuflen )
     {
         // Extension present, get it
-        buffered_read(&ctx->filebuffer, nextheader+6,3);
+        ccx_buffered_read(&ctx->filebuffer, nextheader+6,3);
         past=past+result;
         if (result!=3) {
             // Consider this the end of the show.
@@ -210,7 +210,7 @@ int read_video_pes_header (ccx_context_t* ctx, unsigned char *nextheader, int *h
     if ( !sbuflen )
     {
         if (nextheader[8] > 0) {
-            buffered_read(&ctx->filebuffer, nextheader+9,nextheader[8]);
+            ccx_buffered_read(&ctx->filebuffer, nextheader+9,nextheader[8]);
             past=past+result;
             if (result!=nextheader[8]) {
                 return -1;

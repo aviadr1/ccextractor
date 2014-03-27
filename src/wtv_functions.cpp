@@ -45,23 +45,23 @@ int add_skip_chunks(ccx_context_t* ctx, wtv_chunked_buffer *cb, uint32_t offset,
 {
 
     uint64_t start = ctx->filebuffer.pos; //Not sure this is the best way to do this
-    buffered_seek(&ctx->filebuffer, (offset*WTV_CHUNK_SIZE)-start);
+    ccx_buffered_seek(&ctx->filebuffer, (offset*WTV_CHUNK_SIZE)-start);
     uint64_t seek_back=0-((offset*WTV_CHUNK_SIZE)-start);
 
 	uint32_t value;
-	buffered_read(&ctx->filebuffer,(unsigned char*)&value, 4);
+	ccx_buffered_read(&ctx->filebuffer,(unsigned char*)&value, 4);
     if(result!=4)
         return 0;
     seek_back-=4;
     while(value!=0) {
         dbg_print(CCX_DMT_PARSE, "value: %x\n", get_meta_chunk_start(value));
-        buffered_read(&ctx->filebuffer,(unsigned char*)&value, 4);
+        ccx_buffered_read(&ctx->filebuffer,(unsigned char*)&value, 4);
         if(result!=4)
             return 0;
         add_chunk(cb, get_meta_chunk_start(value));
         seek_back-=4;
     }
-    buffered_seek(&ctx->filebuffer, seek_back);
+    ccx_buffered_seek(&ctx->filebuffer, seek_back);
     dbg_print(CCX_DMT_PARSE, "filebuffer_pos: %x\n", ctx->filebuffer.pos);
     return 1;
 }
@@ -85,16 +85,16 @@ void get_sized_buffer(ccx_context_t* ctx, wtv_chunked_buffer *cb, uint32_t size)
 	uint64_t start = cb->filepos;
 
 	if(cb->skip_chunks[cb->chunk]!=-1 && start+size>cb->skip_chunks[cb->chunk]) {
-        buffered_read(&ctx->filebuffer,cb->buffer, cb->skip_chunks[cb->chunk]-start);
+        ccx_buffered_read(&ctx->filebuffer,cb->buffer, cb->skip_chunks[cb->chunk]-start);
         cb->filepos+=cb->skip_chunks[cb->chunk]-start;
-        buffered_seek(&ctx->filebuffer, WTV_META_CHUNK_SIZE);
+        ccx_buffered_seek(&ctx->filebuffer, WTV_META_CHUNK_SIZE);
         cb->filepos+=WTV_META_CHUNK_SIZE;
-        buffered_read(&ctx->filebuffer,cb->buffer+(cb->skip_chunks[cb->chunk]-start), size-(cb->skip_chunks[cb->chunk]-start));
+        ccx_buffered_read(&ctx->filebuffer,cb->buffer+(cb->skip_chunks[cb->chunk]-start), size-(cb->skip_chunks[cb->chunk]-start));
         cb->filepos+=cb->skip_chunks[cb->chunk]-start;
         cb->chunk++;
 	}
 	else {
-		buffered_read(&ctx->filebuffer,cb->buffer, size);
+		ccx_buffered_read(&ctx->filebuffer,cb->buffer, size);
         cb->filepos+=size;
         if(result!=size) {
             free(buffer);
@@ -121,7 +121,7 @@ LLONG wtv_getmoredata(ccx_context_t* ctx)
             ccx_bufferdatatype=CCX_PES;
         else
             ccx_bufferdatatype=CCX_RAW;
-        buffered_read(&ctx->filebuffer,parsebuf,0x42);
+        ccx_buffered_read(&ctx->filebuffer,parsebuf,0x42);
         past+=result;
         if (result!=0x42)
         {
@@ -144,7 +144,7 @@ LLONG wtv_getmoredata(ccx_context_t* ctx)
         dbg_print(CCX_DMT_PARSE, "filelen: %x\n", filelen);
         memcpy(&root_dir, parsebuf+0x38, 4);
         dbg_print(CCX_DMT_PARSE, "root_dir: %x\n", root_dir);   
-        buffered_skip(&ctx->filebuffer,(root_dir*WTV_CHUNK_SIZE)-0x42);
+        ccx_buffered_skip(&ctx->filebuffer,(root_dir*WTV_CHUNK_SIZE)-0x42);
         past+=(root_dir*WTV_CHUNK_SIZE)-0x42;
 
         if (result!=(root_dir*WTV_CHUNK_SIZE)-0x42)
@@ -156,7 +156,7 @@ LLONG wtv_getmoredata(ccx_context_t* ctx)
         int end=0;
         while(!end)
         {
-            buffered_read(&ctx->filebuffer,parsebuf, 32);
+            ccx_buffered_read(&ctx->filebuffer,parsebuf, 32);
             int x;
         	for(x=0; x<16; x++)
                 dbg_print(CCX_DMT_PARSE, "%02X ", parsebuf[x]);
@@ -187,7 +187,7 @@ LLONG wtv_getmoredata(ccx_context_t* ctx)
                     end_of_file=1;
                     return 0;
                 }
-                buffered_read(&ctx->filebuffer,parsebuf, len-32);
+                ccx_buffered_read(&ctx->filebuffer,parsebuf, len-32);
                 if (result!=len-32)
                 {
                     mprint("Premature end of file!\n");
@@ -228,7 +228,7 @@ LLONG wtv_getmoredata(ccx_context_t* ctx)
             dbg_print(CCX_DMT_PARSE, "%x, ", cb.skip_chunks[x]);
         dbg_print(CCX_DMT_PARSE, "\n");
 
-		buffered_skip(&ctx->filebuffer,(cb.skip_chunks[cb.chunk]+WTV_META_CHUNK_SIZE)-past);
+		ccx_buffered_skip(&ctx->filebuffer,(cb.skip_chunks[cb.chunk]+WTV_META_CHUNK_SIZE)-past);
         cb.filepos=(cb.skip_chunks[cb.chunk]+WTV_META_CHUNK_SIZE);
 		cb.chunk++;
         past=cb.filepos;
@@ -270,7 +270,7 @@ LLONG wtv_getmoredata(ccx_context_t* ctx)
         {
             dbg_print(CCX_DMT_PARSE, "WTV EOF\n");
             do {
-                buffered_read(&ctx->filebuffer,parsebuf, 1024);
+                ccx_buffered_read(&ctx->filebuffer,parsebuf, 1024);
                 past+=1024;
             } while (result==1024);
             past+=result;

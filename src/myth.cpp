@@ -286,9 +286,9 @@ static AVPacket av;
 int get_be16(ccx_context_t::filebuffer_t* fb)
 {
     unsigned char a,b;
-    buffered_read_byte (fb, &a);
+    ccx_buffered_read_byte (fb, &a);
     past++;
-    buffered_read_byte (fb, &b);
+    ccx_buffered_read_byte (fb, &b);
     past++;
     return (a<<8) | b;
 }
@@ -296,7 +296,7 @@ int get_be16(ccx_context_t::filebuffer_t* fb)
 int get_byte (ccx_context_t::filebuffer_t* fb)
 {
 	unsigned char b;
-	buffered_read_byte(fb, &b);  
+	ccx_buffered_read_byte(fb, &b);  
     if (result==1)
     {
         past++;
@@ -342,7 +342,7 @@ static int find_next_start_code(ccx_context_t::filebuffer_t* fb,
     while (n > 0) 
     {
         unsigned char cx;
-        buffered_read_byte (fb, &cx);
+        ccx_buffered_read_byte (fb, &cx);
         if (result!=1)        
             break;
         past++;
@@ -364,7 +364,7 @@ found:
 
 void url_fskip (ccx_context_t::filebuffer_t* fb, int length)
 {
-    buffered_seek (fb, length);    
+    ccx_buffered_seek (fb, length);    
     past+=length;
 }
 
@@ -689,10 +689,10 @@ redo:
         {
             static const unsigned char avs_seqh[4] = { 0, 0, 1, 0xb0 };
             unsigned char buf[8];
-            buffered_read (fb, buf,8);
+            ccx_buffered_read (fb, buf,8);
             past+=8;
             // get_buffer(&s->pb, buf, 8);
-            buffered_seek (fb, -8);
+            ccx_buffered_seek (fb, -8);
             past-=8;
             if(!memcmp(buf, avs_seqh, 4) && (buf[6] != 0 || buf[7] != 1))
                 codec_id = CODEC_ID_CAVS;
@@ -771,7 +771,7 @@ found:
         }
         av.codec_id=codec_id;
         av.type=type;
-        buffered_read (fb, av.data,av.size);
+        ccx_buffered_read (fb, av.data,av.size);
         past+=av.size;
         position_sanity_check();
         // LSEEK (fh,pkt->size,SEEK_CUR);
@@ -825,7 +825,7 @@ void myth_loop(ccx_context_t::filebuffer_t* fb)
     
     av.data=NULL;
     buffer_input = 1;
-    if (init_file_buffer(fb))
+    if (ccx_buffered_init(fb))
     {
         fatal (EXIT_NOT_ENOUGH_MEMORY, "Not enough memory.\n");        
     }
