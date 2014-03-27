@@ -12,15 +12,11 @@
 
 // compatibility across platforms
 #include "platform.h"
+#include "buffer.h"
 
 #define VERSION "0.69"
 
-struct ccx_filebuffer_context_t {
-    unsigned char *p;
-    int bytesinbuffer; // Number of bytes we actually have on buffer
-    LLONG start; // Position of buffer start relative to file
-    int pos; // Position of pointer relative to buffer start
-};
+
 
 struct ccx_context_t {
     ccx_filebuffer_context_t filebuffer;
@@ -83,13 +79,6 @@ struct ccx_s_teletext_config {
     uint16_t user_page; // Page selected by user, which MIGHT be different to 'page' depending on autodetection stuff
 };
 
-extern LLONG ccx_buffered_read_opt (ccx_filebuffer_context_t* fb, unsigned char *buffer, unsigned int bytes);
-extern void ccx_buffered_skip(ccx_filebuffer_context_t* fb, int bytes);
-extern void ccx_buffered_read(ccx_filebuffer_context_t* ctx, uint8_t* buffer, int bytes);
-extern void ccx_buffered_read_byte(ccx_filebuffer_context_t* ctx, uint8_t* buffer);
-extern void ccx_buffered_seek (ccx_filebuffer_context_t* fb, int offset);
-extern int ccx_buffered_init( ccx_filebuffer_context_t* fb );
-
 //params.cpp
 void parse_parameters (int argc, char *argv[]);
 void usage (void);
@@ -121,7 +110,6 @@ void activity_xds_program_description (int line_num, const char *program_desc);
 void activity_report_data_read (void);
 
 extern unsigned long net_activity_gui;
-extern LLONG result;
 extern int end_of_file;
 extern LLONG inbuf;
 extern int ccx_bufferdatatype; // Can be RAW or PES
@@ -278,7 +266,6 @@ extern LLONG total_inputsize, total_past; // Only in binary concat mode
 
 extern char **inputfile;
 extern int current_file;
-extern LLONG result; // Number of bytes read/skipped in last read operation
 
 
 extern ccx_datasource input_source;

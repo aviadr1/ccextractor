@@ -50,13 +50,13 @@ int add_skip_chunks(ccx_context_t* ctx, wtv_chunked_buffer *cb, uint32_t offset,
 
 	uint32_t value;
 	ccx_buffered_read(&ctx->filebuffer,(unsigned char*)&value, 4);
-    if(result!=4)
+    if(ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer)!=4)
         return 0;
     seek_back-=4;
     while(value!=0) {
         dbg_print(CCX_DMT_PARSE, "value: %x\n", get_meta_chunk_start(value));
         ccx_buffered_read(&ctx->filebuffer,(unsigned char*)&value, 4);
-        if(result!=4)
+        if(ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer)!=4)
             return 0;
         add_chunk(cb, get_meta_chunk_start(value));
         seek_back-=4;
@@ -96,7 +96,7 @@ void get_sized_buffer(ccx_context_t* ctx, wtv_chunked_buffer *cb, uint32_t size)
 	else {
 		ccx_buffered_read(&ctx->filebuffer,cb->buffer, size);
         cb->filepos+=size;
-        if(result!=size) {
+        if(ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer)!=size) {
             free(buffer);
             cb->buffer_size=0;
             return;
@@ -122,8 +122,8 @@ LLONG wtv_getmoredata(ccx_context_t* ctx)
         else
             ccx_bufferdatatype=CCX_RAW;
         ccx_buffered_read(&ctx->filebuffer,parsebuf,0x42);
-        past+=result;
-        if (result!=0x42)
+        past+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+        if (ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer)!=0x42)
         {
             mprint("Premature end of file!\n");
             end_of_file=1;
@@ -147,7 +147,7 @@ LLONG wtv_getmoredata(ccx_context_t* ctx)
         ccx_buffered_skip(&ctx->filebuffer,(root_dir*WTV_CHUNK_SIZE)-0x42);
         past+=(root_dir*WTV_CHUNK_SIZE)-0x42;
 
-        if (result!=(root_dir*WTV_CHUNK_SIZE)-0x42)
+        if (ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer)!=(root_dir*WTV_CHUNK_SIZE)-0x42)
         {
             mprint("Premature end of file!\n");
             end_of_file=1;
@@ -162,7 +162,7 @@ LLONG wtv_getmoredata(ccx_context_t* ctx)
                 dbg_print(CCX_DMT_PARSE, "%02X ", parsebuf[x]);
             dbg_print(CCX_DMT_PARSE, "\n");
             
-            if (result!=32)
+            if (ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer)!=32)
             {
                 mprint("Premature end of file!\n");
                 end_of_file=1;
@@ -188,7 +188,7 @@ LLONG wtv_getmoredata(ccx_context_t* ctx)
                     return 0;
                 }
                 ccx_buffered_read(&ctx->filebuffer,parsebuf, len-32);
-                if (result!=len-32)
+                if (ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer)!=len-32)
                 {
                     mprint("Premature end of file!\n");
                     end_of_file=1;
@@ -272,8 +272,8 @@ LLONG wtv_getmoredata(ccx_context_t* ctx)
             do {
                 ccx_buffered_read(&ctx->filebuffer,parsebuf, 1024);
                 past+=1024;
-            } while (result==1024);
-            past+=result;
+            } while (ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer)==1024);
+            past+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
             end_of_file=1;
             return 0;
         }
@@ -319,7 +319,7 @@ LLONG wtv_getmoredata(ccx_context_t* ctx)
             dbg_print(CCX_DMT_PARSE, "\nWTV DATA\n");
             get_sized_buffer(ctx, &cb, len);
             memcpy(buffer+inbuf, cb.buffer, len);
-            inbuf+=result;
+            inbuf+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
             bytesread+=(int) len;
             if(pad>0)
                 get_sized_buffer(ctx, &cb, pad);

@@ -297,7 +297,7 @@ int get_byte (ccx_filebuffer_context_t* fb)
 {
 	unsigned char b;
 	ccx_buffered_read_byte(fb, &b);  
-    if (result==1)
+    if (ccx_buffered_get_last_num_bytes_processed(fb)==1)
     {
         past++;
         return b;        
@@ -343,7 +343,7 @@ static int find_next_start_code(ccx_filebuffer_context_t* fb,
     {
         unsigned char cx;
         ccx_buffered_read_byte (fb, &cx);
-        if (result!=1)        
+        if (ccx_buffered_get_last_num_bytes_processed(fb)!=1)        
             break;
         past++;
         v = cx;

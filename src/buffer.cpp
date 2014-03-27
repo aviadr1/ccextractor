@@ -4,7 +4,7 @@ void ccx_buffered_skip(ccx_filebuffer_context_t* fb, int bytes)
 {
     if (bytes<=fb->bytesinbuffer-fb->pos) {
         fb->pos+=bytes;
-        result=bytes;
+        fb->number_of_bytes_read_in_last_op=bytes;
     } 
     else {
         ccx_buffered_read_opt (fb, NULL,bytes);
@@ -19,7 +19,7 @@ void ccx_buffered_read(ccx_filebuffer_context_t* fb, uint8_t* buffer, int bytes)
         }
 
         fb->pos+=bytes;
-        result=bytes;
+        fb->number_of_bytes_read_in_last_op=bytes;
     } 
     else { 
         ccx_buffered_read_opt (fb, buffer,bytes); 
@@ -38,11 +38,11 @@ void ccx_buffered_read_byte(ccx_filebuffer_context_t* fb, uint8_t* buffer)
         if (buffer) { 
             *buffer=fb->p[fb->pos];
             fb->pos++;
-            result=1; 
+            fb->number_of_bytes_read_in_last_op=1; 
         }
     } 
     else {
-        result=ccx_buffered_read_opt (fb, buffer,1);
+        fb->number_of_bytes_read_in_last_op=ccx_buffered_read_opt (fb, buffer,1);
     }
 }
 
@@ -65,7 +65,7 @@ void ccx_buffered_seek (ccx_filebuffer_context_t* fb, int offset)
     }
     else
     {
-        result = ccx_buffered_read_opt (fb, NULL, offset);
+        fb->number_of_bytes_read_in_last_op = ccx_buffered_read_opt (fb, NULL, offset);
         position_sanity_check();
     }
 }

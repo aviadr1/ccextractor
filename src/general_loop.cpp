@@ -21,7 +21,6 @@ unsigned current_aspect_ratio = 0;
 unsigned current_frame_rate = 4; // Assume standard fps
 double current_fps = framerates_values[current_frame_rate];
 LLONG current_pts = 0;
-LLONG result; // Number of bytes read/skipped in last read operation
 int end_of_file=0; // End of file?
 
 
@@ -39,6 +38,11 @@ int strangeheader=0;
 static int non_compliant_DVD = 0; // Found extra captions in DVDs?
 
 LLONG process_raw_with_field (void);
+
+static void set_fake_number_of_bytes_read_in_last_op(ccx_filebuffer_context_t* fb)
+{
+    fb->number_of_bytes_read_in_last_op = 1;
+}
 
 // Program stream specific data grabber
 LLONG ps_getmoredata(ccx_context_t* ctx)
@@ -62,8 +66,8 @@ LLONG ps_getmoredata(ccx_context_t* ctx)
         else 
         {
             ccx_buffered_read(&ctx->filebuffer,nextheader,6);
-            past+=result;
-            if (result!=6) 
+            past+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+            if (ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer)!=6) 
             {
                 // Consider this the end of the show.
                 end_of_file=1;
@@ -95,8 +99,8 @@ LLONG ps_getmoredata(ccx_context_t* ctx)
 
                     memmove (nextheader,newheader,(size_t)(hlen-atpos)); 
                     ccx_buffered_read(&ctx->filebuffer,nextheader+(hlen-atpos),atpos);
-                    past+=result;
-                    if (result!=atpos) 
+                    past+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+                    if (ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer)!=atpos) 
                     {
                         end_of_file=1;
                         break;
@@ -105,8 +109,8 @@ LLONG ps_getmoredata(ccx_context_t* ctx)
                 else
                 {
                     ccx_buffered_read(&ctx->filebuffer,nextheader,hlen);
-                    past+=result;
-                    if (result!=hlen) 
+                    past+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+                    if (ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer)!=hlen) 
                     {
                         end_of_file=1;
                         break;
@@ -126,8 +130,8 @@ LLONG ps_getmoredata(ccx_context_t* ctx)
             {
                 dbg_print(CCX_DMT_VERBOSE, "PACK header\n");
                 ccx_buffered_read(&ctx->filebuffer,nextheader+6,8);
-                past+=result;
-                if (result!=8) 
+                past+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+                if (ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer)!=8) 
                 {
                     // Consider this the end of the show.
                     end_of_file=1;
@@ -153,7 +157,7 @@ LLONG ps_getmoredata(ccx_context_t* ctx)
                 ccx_buffered_skip(&ctx->filebuffer,(int) stufflen);
                 past+=stufflen;
                 // fake a result value as something was skipped
-                result=1;
+                set_fake_number_of_bytes_read_in_last_op(&ctx->filebuffer);
                 continue;
             }
             // Some PES stream
@@ -185,7 +189,7 @@ LLONG ps_getmoredata(ccx_context_t* ctx)
                 ccx_buffered_skip(&ctx->filebuffer, (int) headerlen);
                 past+=headerlen;
                 // fake a result value as something was skipped
-                result=1;
+                set_fake_number_of_bytes_read_in_last_op(&ctx->filebuffer);
 
                 continue;
             }
@@ -215,13 +219,13 @@ LLONG ps_getmoredata(ccx_context_t* ctx)
                 }
 
                 ccx_buffered_read(&ctx->filebuffer, buffer+inbuf,want);
-                past=past+result;
-                if (result>0) {
-                    payload_read+=(int) result;
+                past=past+ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+                if (ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer)>0) {
+                    payload_read+=(int) ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
                 }
-                inbuf+=result;
+                inbuf+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
 
-                if (result!=want) { // Not complete - EOF
+                if (ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer)!=want) { // Not complete - EOF
                     end_of_file=1;
                     break;
                 }
@@ -234,7 +238,7 @@ LLONG ps_getmoredata(ccx_context_t* ctx)
             }
         }
     } 
-    while (result!=0 && !enough && BUFSIZE!=inbuf);
+    while (ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer)!=0 && !enough && BUFSIZE!=inbuf);
 
     dbg_print(CCX_DMT_VERBOSE, "PES data read: %d\n", payload_read);
 
@@ -253,10 +257,10 @@ LLONG general_getmoredata(ccx_filebuffer_context_t* fb)
         want = (int) (BUFSIZE-inbuf);
         ccx_buffered_read (fb, buffer+inbuf,want); // This is a macro.		
         // 'result' HAS the number of bytes read
-        past=past+result;
-        inbuf+=result;
-        bytesread+=(int) result;
-    } while (result!=0 && result!=want);
+        past=past+ccx_buffered_get_last_num_bytes_processed(fb);
+        inbuf+=ccx_buffered_get_last_num_bytes_processed(fb);
+        bytesread+=(int) ccx_buffered_get_last_num_bytes_processed(fb);
+    } while (ccx_buffered_get_last_num_bytes_processed(fb)!=0 && ccx_buffered_get_last_num_bytes_processed(fb)!=want);
     return bytesread;
 }
 
@@ -718,9 +722,9 @@ void rcwt_loop( ccx_context_t* ctx )
     int bread = 0; // Bytes read
 
     ccx_buffered_read(&ctx->filebuffer,parsebuf,11);
-    past+=result;
-    bread+=(int) result;
-    if (result!=11)
+    past+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+    bread+=(int) ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+    if (ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer)!=11)
     {
         mprint("Premature end of file!\n");
         end_of_file=1;
@@ -752,12 +756,12 @@ void rcwt_loop( ccx_context_t* ctx )
     {
         // Read the data header
         ccx_buffered_read(&ctx->filebuffer,parsebuf,10);
-        past+=result;
-        bread+=(int) result;
+        past+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+        bread+=(int) ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
 
-        if (result!=10)
+        if (ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer)!=10)
         {
-            if (result!=0)
+            if (ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer)!=0)
                 mprint("Premature end of file!\n");
 
             // We are done
@@ -779,9 +783,9 @@ void rcwt_loop( ccx_context_t* ctx )
                 parsebufsize = cbcount*3;
             }
             ccx_buffered_read(&ctx->filebuffer,parsebuf,cbcount*3);
-            past+=result;
-            bread+=(int) result;
-            if (result!=cbcount*3)
+            past+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+            bread+=(int) ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+            if (ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer)!=cbcount*3)
             {
                 mprint("Premature end of file!\n");
                 end_of_file=1;

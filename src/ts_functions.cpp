@@ -89,10 +89,10 @@ void init_ts_constants(void)
 int ts_readpacket(ccx_context_t* ctx)
 {
     ccx_buffered_read(&ctx->filebuffer,tspacket,188);
-    past+=result;
-    if (result!=188)
+    past+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+    if (ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer)!=188)
     {
-        if (result>0)
+        if (ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer)>0)
             mprint("Premature end of file!\n");
         end_of_file=1;
         return 0;
@@ -123,8 +123,8 @@ int ts_readpacket(ccx_context_t* ctx)
 
             memmove (tspacket,tstemp,(size_t)(tslen-atpos));
             ccx_buffered_read(&ctx->filebuffer,tspacket+(tslen-atpos),atpos);
-            past+=result;
-            if (result!=atpos) 
+            past+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+            if (ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer)!=atpos) 
             {
                 mprint("Premature end of file!\n");
                 end_of_file=1;
@@ -135,8 +135,8 @@ int ts_readpacket(ccx_context_t* ctx)
         {
             // Read the next 188 bytes.
             ccx_buffered_read(&ctx->filebuffer,tspacket,tslen);
-            past+=result;
-            if (result!=tslen) 
+            past+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+            if (ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer)!=tslen) 
             {
                 mprint("Premature end of file!\n");
                 end_of_file=1;

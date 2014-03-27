@@ -190,8 +190,8 @@ int read_video_pes_header (ccx_context_t* ctx, unsigned char *nextheader, int *h
     {
         // Extension present, get it
         ccx_buffered_read(&ctx->filebuffer, nextheader+6,3);
-        past=past+result;
-        if (result!=3) {
+        past=past+ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+        if (ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer)!=3) {
             // Consider this the end of the show.
             return -1;
         }
@@ -211,8 +211,8 @@ int read_video_pes_header (ccx_context_t* ctx, unsigned char *nextheader, int *h
     {
         if (nextheader[8] > 0) {
             ccx_buffered_read(&ctx->filebuffer, nextheader+9,nextheader[8]);
-            past=past+result;
-            if (result!=nextheader[8]) {
+            past=past+ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+            if (ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer)!=nextheader[8]) {
                 return -1;
             }
         }

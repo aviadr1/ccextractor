@@ -178,8 +178,8 @@ LLONG asf_getmoredata(ccx_context_t* ctx)
         }
 
         ccx_buffered_read(&ctx->filebuffer,parsebuf,30);
-        past+=result;
-        if (result!=30)
+        past+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+        if (ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer)!=30)
         {
             mprint("Premature end of file!\n");
             end_of_file=1;
@@ -212,8 +212,8 @@ LLONG asf_getmoredata(ccx_context_t* ctx)
         getbytes = HeaderObjectSize - 30;
 
         ccx_buffered_read(&ctx->filebuffer,curpos, (int) getbytes);
-        past+=result;
-        if (result!=getbytes)
+        past+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+        if (ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer)!=getbytes)
         {
             mprint("Premature end of file!\n");
             end_of_file=1;
@@ -561,8 +561,8 @@ LLONG asf_getmoredata(ccx_context_t* ctx)
 
         // Now the Data Object, except for the packages
         ccx_buffered_read(&ctx->filebuffer,parsebuf,50); // No realloc needed.
-        past+=result;
-        if (result!=50)
+        past+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+        if (ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer)!=50)
         {
             mprint("Premature end of file!\n");
             end_of_file=1;
@@ -603,9 +603,9 @@ LLONG asf_getmoredata(ccx_context_t* ctx)
 
             // First packet
             ccx_buffered_read(&ctx->filebuffer,parsebuf,1); // No realloc needed.
-            past+=result;
-            dobjectread+=result;
-            if (result!=1)
+            past+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+            dobjectread+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+            if (ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer)!=1)
             {
                 mprint("Premature end of file!\n");
                 end_of_file=1;
@@ -620,9 +620,9 @@ LLONG asf_getmoredata(ccx_context_t* ctx)
                     fatal(EXIT_NOT_CLASSIFIED, "Error Correction Length Type not 00 - reserved - aborting ...\n");
                 }
                 ccx_buffered_read(&ctx->filebuffer,parsebuf+1,ecdatalength);
-                past+=result;
-                dobjectread+=result;
-                if (result!=ecdatalength)
+                past+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+                dobjectread+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+                if (ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer)!=ecdatalength)
                 {
                     mprint("Premature end of file!\n");
                     end_of_file=1;
@@ -641,9 +641,9 @@ LLONG asf_getmoredata(ccx_context_t* ctx)
 
             // Now payload parsing information
             ccx_buffered_read(&ctx->filebuffer,parsebuf+ecinfo,2-ecinfo); // No realloc needed
-            past+=result;
-            dobjectread+=result;
-            if (result!=2)
+            past+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+            dobjectread+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+            if (ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer)!=2)
             {
                 mprint("Premature end of file!\n");
                 end_of_file=1;
@@ -677,9 +677,9 @@ LLONG asf_getmoredata(ccx_context_t* ctx)
             payloadparsersize = PacketLType + SequenceType + PaddingLType + 6;
 
             ccx_buffered_read(&ctx->filebuffer,parsebuf+2, payloadparsersize); // No realloc needed
-            past+=result;
-            dobjectread+=result;
-            if (result!=payloadparsersize)
+            past+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+            dobjectread+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+            if (ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer)!=payloadparsersize)
             {
                 mprint("Premature end of file!\n");
                 end_of_file=1;
@@ -715,9 +715,9 @@ LLONG asf_getmoredata(ccx_context_t* ctx)
                 unsigned char plheader[1];
 
                 ccx_buffered_read(&ctx->filebuffer,plheader, 1);
-                past+=result;
-                dobjectread+=result;
-                if (result!=1)
+                past+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+                dobjectread+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+                if (ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer)!=1)
                 {
                     mprint("Premature end of file!\n");
                     end_of_file=1;
@@ -754,9 +754,9 @@ LLONG asf_getmoredata(ccx_context_t* ctx)
                 int payloadheadersize = 1+MediaNumberLType+OffsetMediaLType+ReplicatedLType;
             
                 ccx_buffered_read(&ctx->filebuffer,parsebuf, payloadheadersize); // No realloc needed
-                past+=result;
-                dobjectread+=result;
-                if (result!=payloadheadersize)
+                past+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+                dobjectread+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+                if (ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer)!=payloadheadersize)
                 {
                     mprint("Premature end of file!\n");
                     end_of_file=1;
@@ -782,9 +782,9 @@ LLONG asf_getmoredata(ccx_context_t* ctx)
                     parsebufsize = ReplicatedLength;
                 }
                 ccx_buffered_read(&ctx->filebuffer,parsebuf, (long)ReplicatedLength);
-                past+=result;
-                dobjectread+=result;
-                if (result!=ReplicatedLength)
+                past+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+                dobjectread+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+                if (ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer)!=ReplicatedLength)
                 {
                     mprint("Premature end of file!\n");
                     end_of_file=1;
@@ -858,9 +858,9 @@ LLONG asf_getmoredata(ccx_context_t* ctx)
                     unsigned char plheader[4];
 
                     ccx_buffered_read(&ctx->filebuffer,plheader, PayloadLType);
-                    past+=result;
-                    dobjectread+=result;
-                    if (result!=PayloadLType)
+                    past+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+                    dobjectread+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+                    if (ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer)!=PayloadLType)
                     {
                         mprint("Premature end of file!\n");
                         end_of_file=1;
@@ -1001,10 +1001,10 @@ LLONG asf_getmoredata(ccx_context_t* ctx)
                 if (want < (long)PayloadLength )
                     fatal(EXIT_BUG_BUG, "Buffer size to small for ASF payload!\nPlease file a bug report!\n");
                 ccx_buffered_read(&ctx->filebuffer, buffer+inbuf,want);
-                payload_read+=(int) result;
-                inbuf+=result;
-                past+=result;
-                if (result!=PayloadLength)
+                payload_read+=(int) ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+                inbuf+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+                past+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+                if (ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer)!=PayloadLength)
                 {
                     mprint("Premature end of file!\n");
                     end_of_file=1;
@@ -1017,14 +1017,14 @@ LLONG asf_getmoredata(ccx_context_t* ctx)
                 // Skip non-cc data
                 dbg_print(CCX_DMT_PARSE, "Skipping Stream #%d data ...\n", PayloadStreamNumber);
                 ccx_buffered_skip(&ctx->filebuffer, (int) PayloadLength);
-                past+=result;
-                if (result!=PayloadLength)
+                past+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+                if (ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer)!=PayloadLength)
                 {
                     mprint("Premature end of file!\n");
                     end_of_file=1;
                     return payload_read;
                 }
-                dobjectread+=result;
+                dobjectread+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
             }
             
             payloadcur++;
@@ -1035,14 +1035,14 @@ LLONG asf_getmoredata(ccx_context_t* ctx)
         // Skip padding bytes
         dbg_print(CCX_DMT_PARSE, "Skip %d padding\n", PaddingLength);
         ccx_buffered_skip(&ctx->filebuffer,(long)PaddingLength);
-        past+=result;
-        if (result!=PaddingLength)
+        past+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
+        if (ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer)!=PaddingLength)
         {
             mprint("Premature end of file!\n");
             end_of_file=1;
             return payload_read;
         }
-        dobjectread+=result;
+        dobjectread+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
 
         datapacketcur++;
         dbg_print(CCX_DMT_PARSE, "Bytes read: %lld/%lld\n", dobjectread, DataObjectSize);
@@ -1055,7 +1055,7 @@ LLONG asf_getmoredata(ccx_context_t* ctx)
         // Skip the rest of the file
         dbg_print(CCX_DMT_PARSE, "Skip the rest: %d\n",int(FileSize - HeaderObjectSize - DataObjectSize));
         ccx_buffered_skip(&ctx->filebuffer,int(FileSize - HeaderObjectSize - DataObjectSize));
-        past+=result;
+        past+=ccx_buffered_get_last_num_bytes_processed(&ctx->filebuffer);
         // Don not set end_of_file (although it is true) as this would
         // produce an premature end error.
         //end_of_file=1;
