@@ -243,7 +243,7 @@ LLONG ps_getmoredata(ccx_context_t* ctx)
 
 
 // Returns number of bytes read, or zero for EOF
-LLONG general_getmoredata(ccx_context_t::filebuffer_t* fb)
+LLONG general_getmoredata(ccx_filebuffer_context_t* fb)
 {
     int bytesread = 0;
     int want;

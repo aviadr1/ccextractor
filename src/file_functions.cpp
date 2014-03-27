@@ -258,7 +258,7 @@ void sleepandchecktimeout (time_t start)
         sleep_secs(1);
 }
 
-void return_to_buffer (ccx_context_t::filebuffer_t* fb, unsigned char *buffer, unsigned int bytes)
+void return_to_buffer (ccx_filebuffer_context_t* fb, unsigned char *buffer, unsigned int bytes)
 {
 	if (bytes == fb->pos)
 	{
@@ -286,7 +286,7 @@ void return_to_buffer (ccx_context_t::filebuffer_t* fb, unsigned char *buffer, u
 	fb->bytesinbuffer+=bytes;
 }
 
-LLONG ccx_buffered_read_opt (ccx_context_t::filebuffer_t* fb, unsigned char *buffer, unsigned int bytes)
+LLONG ccx_buffered_read_opt (ccx_filebuffer_context_t* fb, unsigned char *buffer, unsigned int bytes)
 {
     LLONG copied=0;
     position_sanity_check();

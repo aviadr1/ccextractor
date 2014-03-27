@@ -283,7 +283,7 @@ typedef struct AVPacket {
 
 static AVPacket av;
 
-int get_be16(ccx_context_t::filebuffer_t* fb)
+int get_be16(ccx_filebuffer_context_t* fb)
 {
     unsigned char a,b;
     ccx_buffered_read_byte (fb, &a);
@@ -293,7 +293,7 @@ int get_be16(ccx_context_t::filebuffer_t* fb)
     return (a<<8) | b;
 }
 
-int get_byte (ccx_context_t::filebuffer_t* fb)
+int get_byte (ccx_filebuffer_context_t* fb)
 {
 	unsigned char b;
 	ccx_buffered_read_byte(fb, &b);  
@@ -306,7 +306,7 @@ int get_byte (ccx_context_t::filebuffer_t* fb)
         return 0;
 }
 
-unsigned int get_be32(ccx_context_t::filebuffer_t* fb)
+unsigned int get_be32(ccx_filebuffer_context_t* fb)
 {
     unsigned int val;
     val = get_be16(fb) << 16;
@@ -315,7 +315,7 @@ unsigned int get_be32(ccx_context_t::filebuffer_t* fb)
 }
 
 
-static LLONG get_pts(ccx_context_t::filebuffer_t* fb, int c)
+static LLONG get_pts(ccx_filebuffer_context_t* fb, int c)
 {
     LLONG pts;
     int val;
@@ -330,7 +330,7 @@ static LLONG get_pts(ccx_context_t::filebuffer_t* fb, int c)
     return pts;
 }
 
-static int find_next_start_code(ccx_context_t::filebuffer_t* fb,
+static int find_next_start_code(ccx_filebuffer_context_t* fb,
                                 int *size_ptr,
                                 unsigned int *header_state)
 {
@@ -362,13 +362,13 @@ found:
     return val;
 }
 
-void url_fskip (ccx_context_t::filebuffer_t* fb, int length)
+void url_fskip (ccx_filebuffer_context_t* fb, int length)
 {
     ccx_buffered_seek (fb, length);    
     past+=length;
 }
 
-static long mpegps_psm_parse(ccx_context_t::filebuffer_t* fb)
+static long mpegps_psm_parse(ccx_filebuffer_context_t* fb)
 {
     int psm_length, ps_info_length, es_map_length;
 
@@ -398,7 +398,7 @@ static long mpegps_psm_parse(ccx_context_t::filebuffer_t* fb)
 }
 
 
-static int mpegps_read_pes_header(ccx_context_t::filebuffer_t* fb,
+static int mpegps_read_pes_header(ccx_filebuffer_context_t* fb,
                                   int *pstart_code,
                                   LLONG *ppts, LLONG *pdts)
 {    
@@ -638,7 +638,7 @@ void ProcessVBIDataPacket()
     // lastccptsu = utc;
 }
 
-static int mpegps_read_packet(ccx_context_t::filebuffer_t* fb)
+static int mpegps_read_packet(ccx_filebuffer_context_t* fb)
 {
     LLONG pts, dts;
 
@@ -818,7 +818,7 @@ void build_parity_table (void)
 	cc608_build_parity_table(cc608_parity_table);
 }
 
-void myth_loop(ccx_context_t::filebuffer_t* fb)
+void myth_loop(ccx_filebuffer_context_t* fb)
 {	
     int rc;
 	int has_vbi=0;	

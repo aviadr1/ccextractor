@@ -15,14 +15,15 @@
 
 #define VERSION "0.69"
 
-struct ccx_context_t 
-{
-    struct filebuffer_t {
-        unsigned char *p;
-        int bytesinbuffer; // Number of bytes we actually have on buffer
-        LLONG start; // Position of buffer start relative to file
-        int pos; // Position of pointer relative to buffer start
-    } filebuffer;
+struct ccx_filebuffer_context_t {
+    unsigned char *p;
+    int bytesinbuffer; // Number of bytes we actually have on buffer
+    LLONG start; // Position of buffer start relative to file
+    int pos; // Position of pointer relative to buffer start
+};
+
+struct ccx_context_t {
+    ccx_filebuffer_context_t filebuffer;
 };
 
 extern void ccx_init_context(ccx_context_t* ctx);
@@ -82,12 +83,12 @@ struct ccx_s_teletext_config {
     uint16_t user_page; // Page selected by user, which MIGHT be different to 'page' depending on autodetection stuff
 };
 
-extern LLONG ccx_buffered_read_opt (ccx_context_t::filebuffer_t* fb, unsigned char *buffer, unsigned int bytes);
-extern void ccx_buffered_skip(ccx_context_t::filebuffer_t* fb, int bytes);
-extern void ccx_buffered_read(ccx_context_t::filebuffer_t* ctx, uint8_t* buffer, int bytes);
-extern void ccx_buffered_read_byte(ccx_context_t::filebuffer_t* ctx, uint8_t* buffer);
-extern void ccx_buffered_seek (ccx_context_t::filebuffer_t* fb, int offset);
-extern int ccx_buffered_init( ccx_context_t::filebuffer_t* fb );
+extern LLONG ccx_buffered_read_opt (ccx_filebuffer_context_t* fb, unsigned char *buffer, unsigned int bytes);
+extern void ccx_buffered_skip(ccx_filebuffer_context_t* fb, int bytes);
+extern void ccx_buffered_read(ccx_filebuffer_context_t* ctx, uint8_t* buffer, int bytes);
+extern void ccx_buffered_read_byte(ccx_filebuffer_context_t* ctx, uint8_t* buffer);
+extern void ccx_buffered_seek (ccx_filebuffer_context_t* fb, int offset);
+extern int ccx_buffered_init( ccx_filebuffer_context_t* fb );
 
 //params.cpp
 void parse_parameters (int argc, char *argv[]);
@@ -96,7 +97,7 @@ void usage (void);
 // general_loop.cpp
 void position_sanity_check ();
 LLONG ps_getmoredata( ccx_context_t* ctx);
-LLONG general_getmoredata( ccx_context_t::filebuffer_t* fb);
+LLONG general_getmoredata( ccx_filebuffer_context_t* fb);
 void raw_loop (ccx_context_t* ctx);
 LLONG process_raw (void);
 void general_loop(ccx_context_t* ctx);
@@ -166,7 +167,7 @@ void prepare_for_new_file (ccx_context_t* ctx);
 void close_input_file (void);
 int switch_to_next_file (LLONG bytesinbuffer);
 int init_sockets (void);
-void return_to_buffer (ccx_context_t::filebuffer_t* fb, unsigned char *buffer, unsigned int bytes);
+void return_to_buffer (ccx_filebuffer_context_t* fb, unsigned char *buffer, unsigned int bytes);
 
 // timing.cpp
 void set_fts(void);
@@ -211,7 +212,7 @@ long ts_readstream(ccx_context_t* ctx);
 LLONG ts_getmoredata( ccx_context_t* ctx);
 
 // myth.cpp
-void myth_loop(ccx_context_t::filebuffer_t* fb);
+void myth_loop(ccx_filebuffer_context_t* fb);
 
 // mp4_bridge2bento4.cpp
 void mp4_loop (char *filename);

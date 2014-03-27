@@ -1,6 +1,6 @@
 #include "ccextractor.h"
 
-void ccx_buffered_skip(ccx_context_t::filebuffer_t* fb, int bytes)
+void ccx_buffered_skip(ccx_filebuffer_context_t* fb, int bytes)
 {
     if (bytes<=fb->bytesinbuffer-fb->pos) {
         fb->pos+=bytes;
@@ -11,7 +11,7 @@ void ccx_buffered_skip(ccx_context_t::filebuffer_t* fb, int bytes)
     }
 }
 
-void ccx_buffered_read(ccx_context_t::filebuffer_t* fb, uint8_t* buffer, int bytes)
+void ccx_buffered_read(ccx_filebuffer_context_t* fb, uint8_t* buffer, int bytes)
 {
     if (bytes<=fb->bytesinbuffer-fb->pos) { 
         if (buffer!=NULL) {
@@ -32,7 +32,7 @@ void ccx_buffered_read(ccx_context_t::filebuffer_t* fb, uint8_t* buffer, int byt
     }
 }
 
-void ccx_buffered_read_byte(ccx_context_t::filebuffer_t* fb, uint8_t* buffer)
+void ccx_buffered_read_byte(ccx_filebuffer_context_t* fb, uint8_t* buffer)
 {
     if (fb->bytesinbuffer-fb->pos) {
         if (buffer) { 
@@ -46,7 +46,7 @@ void ccx_buffered_read_byte(ccx_context_t::filebuffer_t* fb, uint8_t* buffer)
     }
 }
 
-void ccx_buffered_seek (ccx_context_t::filebuffer_t* fb, int offset)
+void ccx_buffered_seek (ccx_filebuffer_context_t* fb, int offset)
 {
     position_sanity_check();
     if (offset<0)
@@ -71,7 +71,7 @@ void ccx_buffered_seek (ccx_context_t::filebuffer_t* fb, int offset)
 }
 
 
-int ccx_buffered_init(ccx_context_t::filebuffer_t* fb)
+int ccx_buffered_init(ccx_filebuffer_context_t* fb)
 {
     fb->start=0;
     fb->pos=0;    
