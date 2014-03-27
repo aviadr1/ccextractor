@@ -236,46 +236,6 @@ void position_sanity_check ()
 }
 
 
-int ccx_buffered_init(ccx_context_t::filebuffer_t* fb)
-{
-    fb->start=0;
-    fb->pos=0;    
-    if (fb->p==NULL)
-    {
-        fb->p=(unsigned char *) malloc (FILEBUFFERSIZE);
-        fb->bytesinbuffer=0;
-    }
-    if (fb->p==NULL) 
-    {
-        fatal (EXIT_NOT_ENOUGH_MEMORY, "Not enough memory\n");        
-    }
-    return 0;
-}
-
-void ccx_buffered_seek (ccx_context_t::filebuffer_t* fb, int offset)
-{
-    position_sanity_check();
-    if (offset<0)
-    {
-        fb->pos+=offset;
-        if (fb->pos<0)
-        {
-            // We got into the start buffer (hopefully)
-            if (startbytes_pos+fb->pos < 0)
-            {
-                fatal (EXIT_BUG_BUG, "PANIC: Attempt to seek before buffer start, this is a bug!");
-            }
-            startbytes_pos+=fb->pos;
-            fb->pos=0;
-        }
-    }
-    else
-    {
-        result = ccx_buffered_read_opt (fb, NULL, offset);
-        position_sanity_check();
-    }
-}
-
 void sleepandchecktimeout (time_t start)
 {
 	if (input_source==CCX_DS_STDIN)

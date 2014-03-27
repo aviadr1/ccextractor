@@ -40,53 +40,6 @@ static int non_compliant_DVD = 0; // Found extra captions in DVDs?
 
 LLONG process_raw_with_field (void);
 
-void ccx_buffered_skip(ccx_context_t::filebuffer_t* fb, int bytes)
-{
-    if (bytes<=fb->bytesinbuffer-fb->pos) {
-        fb->pos+=bytes;
-        result=bytes;
-    } 
-    else {
-        ccx_buffered_read_opt (fb, NULL,bytes);
-    }
-}
-
-void ccx_buffered_read(ccx_context_t::filebuffer_t* fb, uint8_t* buffer, int bytes)
-{
-    if (bytes<=fb->bytesinbuffer-fb->pos) { 
-        if (buffer!=NULL) {
-            memcpy (buffer,fb->p+fb->pos,bytes); 
-        }
-
-        fb->pos+=bytes;
-        result=bytes;
-    } 
-    else { 
-        ccx_buffered_read_opt (fb, buffer,bytes); 
-        if (gui_mode_reports && input_source==CCX_DS_NETWORK) {
-            net_activity_gui++; 
-            if (!(net_activity_gui%1000)) {
-                activity_report_data_read();
-            }
-        }
-    }
-}
-
-void ccx_buffered_read_byte(ccx_context_t::filebuffer_t* fb, uint8_t* buffer)
-{
-    if (fb->bytesinbuffer-fb->pos) {
-        if (buffer) { 
-            *buffer=fb->p[fb->pos];
-            fb->pos++;
-            result=1; 
-        }
-    } 
-    else {
-        result=ccx_buffered_read_opt (fb, buffer,1);
-    }
-}
-
-
 // Program stream specific data grabber
 LLONG ps_getmoredata(ccx_context_t* ctx)
 {
