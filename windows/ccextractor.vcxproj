@@ -76,6 +76,7 @@
     <ClCompile Include="..\src\activity.cpp" />
     <ClCompile Include="..\src\asf_functions.cpp" />
     <ClCompile Include="..\src\avc_functions.cpp" />
+    <ClCompile Include="..\src\buffer.cpp" />
     <ClCompile Include="..\src\ccextractor.cpp" />
     <ClCompile Include="..\src\cc_bitstream.cpp" />
     <ClCompile Include="..\src\cc_decoders_common.cpp" />
